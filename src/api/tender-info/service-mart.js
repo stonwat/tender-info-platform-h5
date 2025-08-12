@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../request';
 
 // 服务工程招标列表接口
 export const getServiceMartList = (params) => {

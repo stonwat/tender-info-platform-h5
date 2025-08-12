@@ -119,8 +119,8 @@ import Navbar from '../components/Navbar.vue';
 import TenderItem from '../components/TenderItem.vue';
 import FilterTags from '../components/FilterTags.vue';
 
-import { getProjectPurchaseList } from '../api/project-purchase';
-import { getServiceMartList } from '../api/service-mart';
+import { getProjectPurchaseList } from '../api/tender-info/project-purchase';
+import { getServiceMartList } from '../api/tender-info/service-mart';
 import { formatDateForApi } from '../utils/format';
 
 // 👇 新增：观察目标和观察者实例
