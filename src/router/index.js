@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import TenderList from '../views/TenderList.vue';
 import TenderDetail from '../views/TenderDetail.vue';
+import ContractConfig from '../views/ContractConfig.vue';
 
 const routes = [
   {
@@ -13,6 +14,11 @@ const routes = [
     name: 'TenderDetail',
     component: TenderDetail,
     props: true
+  },
+  {
+    path: '/send-message',
+    name: 'ContractConfig',
+    component: ContractConfig
   }
 ];
 
@@ -29,6 +35,11 @@ const router = createRouter({
       name: 'TenderDetail',
       component: TenderDetail,
       props: true
+    },
+    {
+      path: '/send-message',
+      name: 'ContractConfig',
+      component: ContractConfig
     }
   ]
 });

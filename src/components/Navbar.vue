@@ -30,7 +30,7 @@
                     <!-- <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i> -->
                     <button
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-primary/70 hover:text-primary p-2 rounded-full transition-colors duration-200"
-                        @click="$emit('search', localSearchQuery)" >
+                        @click="$emit('search', localSearchQuery)">
                         <i class="fa fa-search text-xl"></i>
                         搜索
                     </button>
