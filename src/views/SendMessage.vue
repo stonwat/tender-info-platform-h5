@@ -10,27 +10,30 @@
 
     <!-- 发送邮箱配置区域 -->
     <div class="email-config">
-      <h3 class="email-title">发送邮箱配置</h3>
+      <div class="email-title">
+        发送邮箱配置
+        <button class="btn success" @click="handleUpdateConfig">保存配置</button>
+      </div> 
       <div class="email-form">
         <div class="form-item">
           <label class="form-label">发送邮箱</label>
-          <input class="form-input" v-model="form.sendEmail" placeholder="请输入发送邮箱地址">
+          <input class="form-input" v-model="configForm.sendEmail" placeholder="请输入发送邮箱地址">
         </div>
         <div class="form-item">
           <label class="form-label">邮箱名称</label>
-          <input class="form-input" v-model="form.emailName" placeholder="请输入邮箱显示名称">
+          <input class="form-input" v-model="configForm.nickName" placeholder="请输入邮箱显示名称">
         </div>
         <div class="form-item">
           <label class="form-label">SMTP服务器</label>
-          <input class="form-input" v-model="form.smtpServer" placeholder="例如: smtp.qq.com">
+          <input class="form-input" v-model="configForm.smtpServer" placeholder="例如: smtp.qq.com">
         </div>
         <div class="form-item">
           <label class="form-label">SMTP端口</label>
-          <input class="form-input" v-model="form.smtpPort" placeholder="例如: 465">
+          <input class="form-input" v-model="configForm.smtpPort" placeholder="例如: 465">
         </div>
         <div class="form-item">
           <label class="form-label">邮箱授权码</label>
-          <input class="form-input" v-model="form.grantPassword" placeholder="请输入邮箱密码或授权码">
+          <input class="form-input" v-model="configForm.grantCode" placeholder="请输入邮箱密码或授权码">
         </div>
       </div>
     </div>
@@ -42,7 +45,6 @@
         <div class="action-buttons">
           <button class="btn primary" @click="handleAdd">添加联系人</button>
           <button class="btn danger" @click="handleDelete" :disabled="!hasSelected">删除选中</button>
-          <button class="btn success" @click="handleSave">保存配置</button>
         </div>
       </div>
 
@@ -111,9 +113,6 @@
         </div>
       </div>
 
-      <!-- 消息提示框容器 -->
-      <div id="message-container" class="message-container"></div>
-
       <!-- 确认对话框容器 -->
       <div class="confirm-mask" v-if="confirmVisible">
         <div class="confirm-dialog">
@@ -139,7 +138,7 @@
         <div class="pagination-controls">
           <button class="btn" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
           <button class="btn" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
-          <select class="page-size-select" @change="handleSizeChange">
+          <select class="page-size-select" @change="handlePageSizeChange">
             <option :value="size" v-for="size in [10, 20, 50]" :key="size">
               {{ size }} 条/页
             </option>
@@ -151,30 +150,65 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject } from 'vue'
+import { getConfig, putConfig } from '../api/messages/config';
 import { getContactList } from '../api/messages/contact';
 
+const showMessage = inject('showMessage');
 // 状态定义
 // const activeTab = ref('email')
 // const tabs = ref([
 //   { label: '发送邮箱配置', name: 'email' }
 // ])
+
 const currentPage = ref(1);
 const pageSize = ref(10);
 const selectedContacts = ref([]);
 const errorMessage = ref('');
 
-// 表单数据
-const form = ref({
-  sendEmail: '',
-  emailName: '',
-  smtpServer: '',
-  smtpPort: '',
-  grantPassword: ''
-})
-const contactList = ref([]);
+// 获取发送邮箱配置
+const configForm = ref({});
+const fetchConfig = async () => {
+  try {
+    const data = await getConfig();
+    configForm.value = data[0];
+  } catch (err) {
+    errorMessage.value = `加载信息失败，请稍后重试`;
+    console.error(err);
+    showMessage('加载信息失败，请稍后重试', 'error');
+  }
+};
+fetchConfig();
 
-// 加载初始数据
+// 更新发送邮箱配置
+const handleUpdateConfig = async () => {
+  console.log('showMessage是否存在：', showMessage);
+  const configData = {
+    id: configForm.value.id, // 从现有配置中获取ID
+    sendEmail: configForm.value.sendEmail,
+    nickName: configForm.value.nickName,
+    smtpServer: configForm.value.smtpServer,
+    smtpPort: configForm.value.smtpPort,
+    grantCode: configForm.value.grantCode
+  };
+  console.log(configForm.value.smtpPort,configData,'oppop')
+  try {
+    const response = await putConfig(configData);
+    // 处理失败响应
+    showMessage.success('配置更新成功！');
+    fetchConfig(); // 重新查询最新配置
+  } catch (error) {
+    // 处理失败响应
+    if (error.response?.data?.message) {
+      // showMessage.error(`更新失败：${error.response.data.message}`);
+    } else {
+      // showMessage.error('网络异常，请稍后重试');
+    }
+  }
+}
+
+// 加载联系人邮箱列表
+const contactList = ref([]);
 const loadContactList = async () => {
   currentPage.value = 1;
   try {
@@ -230,28 +264,6 @@ const isAllSelected = computed(() => {
   )
 })
 
-// 消息提示实现
-const showMessage = (message, type = 'success') => {
-  const container = document.getElementById('message-container');
-  const msgEl = document.createElement('div');
-  msgEl.className = `message-item ${type}`;
-  msgEl.innerText = message;
-  container.appendChild(msgEl);
-
-  // 显示动画
-  setTimeout(() => {
-    msgEl.classList.add('show');
-  }, 10);
-
-  // 3秒后移除
-  setTimeout(() => {
-    msgEl.classList.remove('show');
-    setTimeout(() => {
-      container.removeChild(msgEl);
-    }, 300);
-  }, 3000);
-};
-
 // 确认对话框实现
 const showConfirm = (content, callback) => {
   confirmContent.value = content;
@@ -290,7 +302,7 @@ const handleRowCheck = (row, isChecked) => {
   }
 }
 
-const handleSizeChange = (e) => {
+const handlePageSizeChange = (e) => {
   pageSize.value = parseInt(e.target.value)
   currentPage.value = 1
   loadContactList();
@@ -379,10 +391,6 @@ const handleDelete = () => {
     }
   });
 }
-
-const handleSave = () => {
-  showMessage('配置保存成功');
-}
 </script>
 
 <style scoped>
@@ -428,6 +436,7 @@ html {
 }
 
 .email-config {
+  min-height: 30vh;
   /* 视觉表现属性 */
   background: #ffffff;
   border-radius: 8px;
@@ -435,7 +444,9 @@ html {
 }
 
 .email-title {
-  padding: 10px 0 0 12px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px 0 12px;
 
   color: #333;
   font-size: 20px;
@@ -446,11 +457,11 @@ html {
   /* 基础布局属性 */
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 1rem;
   justify-content: space-between;
-  padding: 1.5rem;
-  margin: 1rem 0;
-
+  padding: 1rem;
+  padding-top: 0.4rem;
+  margin-bottom: 1rem;
 }
 
 /* 表单项样式 */
@@ -458,7 +469,7 @@ html {
   /* 基础布局属性 */
   display: flex;
   align-items: center;
-  width: 40%;
+  width: 100%;
   /* 三列布局，预留间距 */
   gap: 0.8rem;
   /* label与input间距 */
@@ -487,75 +498,10 @@ html {
   border-radius: 4px;
 }
 
-
-/* 按钮样式 */
-.btn {
-  /* 基础布局属性 */
-  padding: 0.5rem 1rem;
-  /* 视觉表现属性 */
-  border: none;
-  border-radius: 4px;
-  /* 动态交互属性 */
-  cursor: pointer;
-  transition: background-color 0.2s;
-  /* 过渡动画 */
-}
-
-.btn.primary {
-  /* 视觉表现属性 */
-  background-color: #409eff;
-  color: #fff;
-}
-
-.btn.primary:hover {
-  /* 视觉表现属性 */
-  background-color: #66b1ff;
-}
-
-.btn.danger {
-  /* 视觉表现属性 */
-  background-color: #f56c6c;
-  color: #fff;
-}
-
-.btn.danger:hover {
-  /* 视觉表现属性 */
-  background-color: #f78989;
-}
-
-.btn.success {
-  /* 视觉表现属性 */
-  background-color: #52c41a;
-  color: #fff;
-}
-
-.btn.success:hover {
-  /* 视觉表现属性 */
-  background-color: #73d13d;
-}
-
-.btn.text {
-  /* 视觉表现属性 */
-  background: transparent;
-  color: #409eff;
-}
-
-.btn.text:hover {
-  /* 视觉表现属性 */
-  background-color: #f0f7ff;
-}
-
-.btn:disabled {
-  /* 视觉表现属性 */
-  opacity: 0.6;
-  /* 动态交互属性 */
-  cursor: not-allowed;
-}
-
-
 /* 列表区域样式 */
 .contact-list-section {
   /* 基础布局属性 */
+  min-height: calc(70vh - 60px);
   padding: 1rem;
   margin-top: 1rem;
   /* 视觉表现属性 */
@@ -614,7 +560,7 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
+  margin-top: 0.2rem;
 }
 
 
@@ -694,17 +640,6 @@ html {
   font-size: 12px;
   /* 视觉表现属性 */
   color: #f56c6c;
-}
-
-
-/* 消息提示样式 */
-.message-container {
-  /* 基础布局属性 */
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  /* 其他辅助属性 */
-  z-index: 9999;
 }
 
 .message-item {
@@ -808,6 +743,72 @@ html {
   cursor: pointer;
 }
 
+
+/* 按钮样式 */
+.btn {
+  /* 基础布局属性 */
+  padding: 0.5rem 0.6rem;
+  /* 视觉表现属性 */
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  /* 动态交互属性 */
+  cursor: pointer;
+  transition: background-color 0.2s;
+  /* 过渡动画 */
+}
+
+.btn.primary {
+  /* 视觉表现属性 */
+  background-color: #409eff;
+}
+
+.btn.primary:hover {
+  /* 视觉表现属性 */
+  background-color: #66b1ff;
+}
+
+.btn.danger {
+  /* 视觉表现属性 */
+  background-color: #f56c6c;
+}
+
+.btn.danger:hover {
+  /* 视觉表现属性 */
+  background-color: #f78989;
+}
+
+.btn.success {
+  /* 视觉表现属性 */
+  background-color: #52c41a;
+}
+
+.btn.success:hover {
+  /* 视觉表现属性 */
+  background-color: #73d13d;
+}
+
+.btn.text {
+  /* 视觉表现属性 */
+  background: transparent;
+  color: #409eff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.btn.text:hover {
+  /* 视觉表现属性 */
+  background-color: #f0f7ff;
+}
+
+.btn:disabled {
+  /* 视觉表现属性 */
+  opacity: 0.6;
+  /* 动态交互属性 */
+  cursor: not-allowed;
+}
 
 /* 响应式适配（小屏幕单列布局） */
 @media (max-width: 768px) {

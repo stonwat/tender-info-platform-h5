@@ -24,7 +24,7 @@
       </div>
       <div class="detail-item flex items-start gap-2">
         <i class="fa fa-map-marker text-primary mt-0.5 w-5 text-center"></i>
-        <span>地区：{{ formatRegion(tender?.region) || '——' }} {{ tender?.county || '' }}</span>
+        <span>地区：{{ formatRegion(tender?.region) || '——' }} {{  formatCounty(tender?.county) || '' }}</span>
       </div>
       <!-- <div class="detail-item flex items-start gap-2">
         <i class="fa fa-calendar-plus-o text-primary mt-0.5 w-5 text-center"></i>
@@ -59,7 +59,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProjectPurchaseDetailByUrl } from '../api/tenders/project-purchase';
 import { getServiceMartDetailByUrl } from '../api/tenders/service-mart';
-import { formatRegion } from '../utils/format';
+import { formatRegion,formatCounty } from '../utils/format';
 
 // 路由参数
 const route = useRoute();
@@ -120,7 +120,6 @@ onMounted(async () => {
 
       formattedData = {
         ...res, // 保留原有所有字段（id、title、budget等）
-        county: res.county !== 'None' ? res.county : '——'
       };
     } else if (currentTab === 'other') {
       // 服务工程详情接口
@@ -140,7 +139,6 @@ onMounted(async () => {
       formattedData = {
         ...res,
         budget: `${res.budget}元`,
-        county: res.county !== 'None' ? res.county : '',
         category: projectType, // 使用安全解析的项目类型
       };
     } else {

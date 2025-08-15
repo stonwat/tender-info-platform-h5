@@ -121,7 +121,7 @@ import FilterTags from '../components/FilterTags.vue';
 
 import { getProjectPurchaseList } from '../api/tenders/project-purchase';
 import { getServiceMartList } from '../api/tenders/service-mart';
-import { formatDateForApi } from '../utils/format';
+import { formatDate } from '../utils/format';
 
 // 路由和状态管理 
 const router = useRouter();
@@ -367,7 +367,7 @@ onMounted(() => {
     currentTab.value = tabFromUrl;
   }
   if (!selectedDate.value) {
-    selectedDate.value = formatDateForApi(new Date());
+    selectedDate.value = formatDate(new Date());
   }
   handleRefresh();
   window.addEventListener('scroll', handleScroll);

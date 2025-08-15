@@ -76,7 +76,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue';
-import { formatDateForApi } from '../utils/format';
+import { formatDate } from '../utils/format';
 
 const props = defineProps({
     selectedRegion: { type: String, default: '' },
@@ -108,7 +108,7 @@ watch(() => props.selectedDate, (newVal) => { localDate.value = newVal; });
 onMounted(() => {
     if (!props.selectedDate) {
         const today = new Date();
-        localDate.value = formatDateForApi(today);
+        localDate.value = formatDate(today);
     }
 });
 </script>

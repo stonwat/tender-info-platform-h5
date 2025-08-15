@@ -4,7 +4,7 @@
     <router-link :to="{
       name: 'TenderDetail',
       query: {
-        currentTab:currentTab,
+        currentTab: currentTab,
         url: tender.url,
         region: $route.query.region || '',
         keyword: $route.query.keyword || '',
@@ -32,9 +32,9 @@
               tender.budget }}</span>
             <!-- <span class="w-60 flex-shrink-0"><i class="fa fa-list-alt text-primary mr-1 w-4 inline-block"></i>标的：{{
               tender.matter }}</span> -->
-            <span class="w-60 flex-shrink-0"><i class="fa fa-map-marker text-primary mr-1 w-4 inline-block"></i>地区：{{
-              formatRegion(tender.region)
-            }}</span>
+            <span class="w-60 flex-shrink-0">
+              <i class="fa fa-map-marker text-primary mr-1 w-4 inline-block"></i>
+              地区：{{formatRegion(tender?.region) || '——' }} {{ formatCounty(tender?.county) || '' }}</span>
           </div>
         </div>
 
@@ -50,22 +50,15 @@
 <script setup>
 
 import { customRef } from 'vue';
+import { formatRegion, formatCounty } from '../utils/format';
 
 const props = defineProps({
   tender: Object,
   index: Number,
-  currentTab:String,
+  currentTab: String,
   serialNumber: Number
 });
 
-// 格式化地区
-const formatRegion = (region) => {
-  if (!region) return '';
-  if (region.endsWith('市本级')) {
-    return region.replace('市本级', '市');
-  }
-  return region;
-};
 </script>
 
 <style>
