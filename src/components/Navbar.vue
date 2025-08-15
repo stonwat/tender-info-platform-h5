@@ -87,7 +87,7 @@ const props = defineProps({
 const emit = defineEmits(['refresh', 'search', 'region-change', 'date-change']);
 
 // 控制筛选区域显示/隐藏的状态
-const showFilters = ref(false); // 默认隐藏
+const showFilters = ref(true); // 默认显示
 
 // 内部状态与父组件同步
 const localRegion = ref(props.selectedRegion);

@@ -57,8 +57,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getProjectPurchaseDetailByUrl } from '../api/tender-info/project-purchase';
-import { getServiceMartDetailByUrl } from '../api/tender-info/service-mart';
+import { getProjectPurchaseDetailByUrl } from '../api/tenders/project-purchase';
+import { getServiceMartDetailByUrl } from '../api/tenders/service-mart';
 import { formatRegion } from '../utils/format';
 
 // 路由参数

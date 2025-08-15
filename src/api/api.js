@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 从环境变量读取API域名（避免硬编码）
 // const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/tenders';
-const apiBaseUrl = 'http://localhost:8088/api/tenders';
+const apiBaseUrl = 'http://localhost:8088/api';
 // const apiBaseUrl = 'http://117.72.196.106:8088/api/tenders';
 
 // 创建axios实例

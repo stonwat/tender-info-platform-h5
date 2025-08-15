@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 从环境变量读取API域名（生产环境推荐使用环境变量）
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/api/tenders';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8088/tender-info-platform-api';
 
 // 创建axios实例
 const request = axios.create({
@@ -37,35 +37,35 @@ request.interceptors.response.use(
     // 直接返回响应体中的data部分（简化前端调用）
     return response.data;
   },
-  (error) => {
-    // 处理HTTP错误状态码
-    const status = error.response?.status;
-    const errorMsg = error.response?.data?.message || error.message;
+  // (error) => {
+  //   // 处理HTTP错误状态码
+  //   const status = error.response?.status;
+  //   const errorMsg = error.response?.data?.message || error.message;
 
-    switch (status) {
-      case 401:
-        // 登录失效处理
-        localStorage.removeItem('token');
-        alert('登录已过期，请重新登录');
-        // 跳转到登录页（移动端可使用路由或window.location）
-        // window.location.href = '/login';
-        break;
-      case 403:
-        alert('没有权限访问该资源');
-        break;
-      case 404:
-        alert('请求的资源不存在');
-        break;
-      case 500:
-        alert('服务器内部错误，请稍后再试');
-        break;
-      default:
-        alert(`请求失败: ${errorMsg}`);
-    }
+  //   switch (status) {
+  //     case 401:
+  //       // 登录失效处理
+  //       localStorage.removeItem('token');
+  //       alert('登录已过期，请重新登录');
+  //       // 跳转到登录页（移动端可使用路由或window.location）
+  //       // window.location.href = '/login';
+  //       break;
+  //     case 403:
+  //       alert('没有权限访问该资源');
+  //       break;
+  //     case 404:
+  //       alert('请求的资源不存在');
+  //       break;
+  //     case 500:
+  //       alert('服务器内部错误，请稍后再试');
+  //       break;
+  //     default:
+  //       alert(`请求失败: ${errorMsg}`);
+  //   }
 
-    console.error(`API错误 [${status}]:`, errorMsg);
-    return Promise.reject(error);
-  }
+  //   console.error(`API错误 [${status}]:`, errorMsg);
+  //   return Promise.reject(error);
+  // }
 );
 
 export default request;

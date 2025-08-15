@@ -66,7 +66,7 @@
             <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
               <i class="fa fa-search text-3xl text-gray-300"></i>
             </div>
-            <p class="text-neutral">暂无匹配的{{ currentTab === 'tender' ? '招标' : '服务工程' }}信息</p>
+            <p class="text-neutral">当天暂无匹配的{{ currentTab === 'tender' ? '招标' : '服务工程' }}信息</p>
             <button @click="handleRefresh"
               class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
               重新加载
@@ -119,21 +119,39 @@ import Navbar from '../components/Navbar.vue';
 import TenderItem from '../components/TenderItem.vue';
 import FilterTags from '../components/FilterTags.vue';
 
-import { getProjectPurchaseList } from '../api/tender-info/project-purchase';
-import { getServiceMartList } from '../api/tender-info/service-mart';
+import { getProjectPurchaseList } from '../api/tenders/project-purchase';
+import { getServiceMartList } from '../api/tenders/service-mart';
 import { formatDateForApi } from '../utils/format';
+
+// 路由和状态管理 
+const router = useRouter();
+const route = useRoute();
+
+const currentTab = ref('tender');
+const tenders = ref([]);
+const otherTenders = ref([]);
+const totalCounts = ref({ tender: 0, other: 0 });
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+const isLoading = ref(true);
+const hasMore = ref(true);
+const searchQuery = ref('');
+const selectedRegion = ref('');
+const selectedDate = ref('');
+const errorMessage = ref('');
+const showBackToTop = ref(false);
 
 // 👇 新增：观察目标和观察者实例
 const observeTarget = ref(null);
 let observer = null;
 
-// 核心刷新逻辑（保持不变）
+// 核心刷新逻辑 
 const handleRefresh = () => {
-  loadInitialData();
+  loadInitialTenders();
 };
 
-// 加载初始数据（保持不变）
-const loadInitialData = async () => {
+// 加载初始数据 
+const loadInitialTenders = async () => {
   isLoading.value = true;
   currentPage.value = 1;
   try {
@@ -177,8 +195,8 @@ const loadInitialData = async () => {
   }
 };
 
-// 加载更多数据（保持不变）
-const loadMoreData = async () => {
+// 加载更多数据 
+const loadIMoreTenders = async () => {
   if (isLoading.value || !hasMore.value) return;
   isLoading.value = true;
   currentPage.value++;
@@ -234,7 +252,7 @@ const initObserver = () => {
         entries.forEach((entry) => {
           // 当占位符进入视口、有更多数据、且未在加载中时，触发加载
           if (entry.isIntersecting && hasMore.value && !isLoading.value) {
-            loadMoreData();
+            loadIMoreTenders();
           }
         });
       },
@@ -246,25 +264,7 @@ const initObserver = () => {
   }
 };
 
-// 路由和状态管理（保持不变）
-const router = useRouter();
-const route = useRoute();
-
-const currentTab = ref('tender');
-const tenders = ref([]);
-const otherTenders = ref([]);
-const totalCounts = ref({ tender: 0, other: 0 });
-const currentPage = ref(1);
-const itemsPerPage = ref(10);
-const isLoading = ref(true);
-const hasMore = ref(true);
-const searchQuery = ref('');
-const selectedRegion = ref('');
-const selectedDate = ref('');
-const errorMessage = ref('');
-const showBackToTop = ref(false);
-
-// 计算属性（保持不变）
+// 计算属性 
 const currentTenders = computed(() => {
   return currentTab.value === 'tender' ? tenders.value : otherTenders.value;
 });
@@ -283,7 +283,7 @@ const endIndex = computed(() => {
   return Math.min(currentPage.value * itemsPerPage.value, currentTotalCount.value);
 });
 
-// 交互函数（保持不变）
+// 交互函数 
 const switchTab = (tab) => {
   if (currentTab.value === tab) return;
   currentTab.value = tab;

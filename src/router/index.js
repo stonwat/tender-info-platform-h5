@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import TenderList from '../views/TenderList.vue';
 import TenderDetail from '../views/TenderDetail.vue';
-import ContractConfig from '../views/ContractConfig.vue';
+import SendMessage from '../views/SendMessage.vue';
 
 const routes = [
   {
@@ -17,8 +17,8 @@ const routes = [
   },
   {
     path: '/send-message',
-    name: 'ContractConfig',
-    component: ContractConfig
+    name: 'SendMessage',
+    component: SendMessage
   }
 ];
 
@@ -38,8 +38,8 @@ const router = createRouter({
     },
     {
       path: '/send-message',
-      name: 'ContractConfig',
-      component: ContractConfig
+      name: 'SendMessage',
+      component: SendMessage
     }
   ]
 });
