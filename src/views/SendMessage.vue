@@ -1,170 +1,173 @@
 <template>
-  <div class="contact-config-container">
-    <!-- 标签页 -->
-    <!-- <div class="tabs">
-      <div v-for="(tab, index) in tabs" :key="index" :class="['tab-item', { active: activeTab === tab.name }]"
-        @click="activeTab = tab.name">
-        {{ tab.label }}
-      </div>
-    </div> -->
-
-    <!-- 发送邮箱配置区域 -->
-    <div class="email-config">
-      <div class="email-title">
-        发送邮箱配置
-        <button class="btn success" @click="handleUpdateConfig">保存配置</button>
-      </div> 
-      <div class="email-form">
-        <div class="form-item">
-          <label class="form-label">发送邮箱</label>
-          <input class="form-input" v-model="configForm.sendEmail" placeholder="请输入发送邮箱地址">
+  <div class="app-container">
+    <SidebarNav @changeRouter="handleNavClick" @toggleCollapse="handleNavToggle" />
+    <div class="contact-config-container">
+      <!-- 发送邮箱配置区域 -->
+      <div class="email-config">
+        <div class="email-title">
+          发送邮箱配置
+          <button class="btn success" @click="handleUpdateConfig">保存配置</button>
         </div>
-        <div class="form-item">
-          <label class="form-label">邮箱名称</label>
-          <input class="form-input" v-model="configForm.nickName" placeholder="请输入邮箱显示名称">
-        </div>
-        <div class="form-item">
-          <label class="form-label">SMTP服务器</label>
-          <input class="form-input" v-model="configForm.smtpServer" placeholder="例如: smtp.qq.com">
-        </div>
-        <div class="form-item">
-          <label class="form-label">SMTP端口</label>
-          <input class="form-input" v-model="configForm.smtpPort" placeholder="例如: 465">
-        </div>
-        <div class="form-item">
-          <label class="form-label">邮箱授权码</label>
-          <input class="form-input" v-model="configForm.grantCode" placeholder="请输入邮箱密码或授权码">
-        </div>
-      </div>
-    </div>
-
-    <!-- 联系人列表区域 -->
-    <div class="contact-list-section">
-      <div class="section-header">
-        <h3 class="contact-title">联系人邮箱列表</h3>
-        <div class="action-buttons">
-          <button class="btn primary" @click="handleAdd">添加联系人</button>
-          <button class="btn danger" @click="handleDelete" :disabled="!hasSelected">删除选中</button>
-        </div>
-      </div>
-
-      <table class="contact-table">
-        <thead>
-          <tr>
-            <th class="checkbox-column">
-              <input type="checkbox" @change="handleSelectAll" :checked="isAllSelected">
-            </th>
-            <th style="width:100px">联系人名称</th>
-            <th style="width:140px">邮箱地址</th>
-            <th style="width:100px">备注</th>
-            <th style="width:100px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, index) in paginatedContactList" :key="row. userId">
-            <td class="checkbox-column">
-              <input type="checkbox" :checked="selectedContacts.includes(row)"
-                @change="(e) => handleRowCheck(row, e.target.checked)">
-            </td>
-            <td>{{ row.userName }}</td>
-            <td>{{ row.email }}</td>
-            <td>{{ row.remarks }}</td>
-            <td class="action-column">
-              <button class="btn text" @click="handleEdit(row)">编辑</button>
-              <button class="btn text danger" @click="handleRemove(row)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- 添加/编辑联系人弹窗 -->
-      <div class="dialog-mask" v-show="dialogVisible">
-        <div class="dialog">
-          <div class="dialog-header">
-            <h2>{{ dialogTitle }}</h2>
-            <button class="dialog-close" @click="dialogVisible = false">×</button>
+        <div class="email-form">
+          <div class="form-item">
+            <label class="form-label">发送邮箱</label>
+            <input class="form-input" v-model="configForm.sendEmail" placeholder="请输入发送邮箱地址">
           </div>
-          <div class="dialog-body">
-            <form class="dialog-form" ref="dialogForm">
-              <div class="form-item">
-                <label class="form-label">联系人名称</label>
-                <input class="form-input" v-model="dialogForm.name" placeholder="请输入联系人名称">
-                <p class="error-message" v-if="dialogErrors.name">
-                  {{ dialogErrors.name }}
-                </p>
-              </div>
-              <div class="form-item">
-                <label class="form-label">邮箱地址</label>
-                <input class="form-input" v-model="dialogForm.email" placeholder="请输入邮箱地址">
-                <p class="error-message" v-if="dialogErrors.email">
-                  {{ dialogErrors.email }}
-                </p>
-              </div>
-              <div class="form-item">
-                <label class="form-label">备注</label>
-                <textarea class="form-textarea" v-model="dialogForm.remarks" :rows="3"></textarea>
-              </div>
-            </form>
+          <div class="form-item">
+            <label class="form-label">邮箱名称</label>
+            <input class="form-input" v-model="configForm.nickName" placeholder="请输入邮箱显示名称">
           </div>
-          <div class="dialog-footer">
-            <button class="btn" @click="dialogVisible = false">取消</button>
-            <button class="btn primary" @click="confirmDialog">确认</button>
+          <div class="form-item">
+            <label class="form-label">SMTP服务器</label>
+            <input class="form-input" v-model="configForm.smtpServer" placeholder="例如: smtp.qq.com">
+          </div>
+          <div class="form-item">
+            <label class="form-label">SMTP端口</label>
+            <input class="form-input" v-model="configForm.smtpPort" placeholder="例如: 465">
+          </div>
+          <div class="form-item">
+            <label class="form-label">邮箱授权码</label>
+            <input class="form-input" v-model="configForm.grantCode" placeholder="请输入邮箱密码或授权码">
           </div>
         </div>
       </div>
 
-      <!-- 确认对话框容器 -->
-      <div class="confirm-mask" v-if="confirmVisible">
-        <div class="confirm-dialog">
-          <div class="confirm-header">
-            <h3>{{ confirmTitle }}</h3>
-            <button class="confirm-close" @click="handleConfirmCancel">×</button>
-          </div>
-          <div class="confirm-body">
-            {{ confirmContent }}
-          </div>
-          <div class="confirm-footer">
-            <button class="btn" @click="handleConfirmCancel">取消</button>
-            <button class="btn danger" @click="handleConfirmOk">确定</button>
+      <!-- 联系人列表区域 -->
+      <div class="contact-list-section">
+        <div class="section-header">
+          <h3 class="contact-title">联系人邮箱列表</h3>
+          <div class="action-buttons">
+            <button class="btn primary" @click="handleAddContact">添加联系人</button>
+            <button class="btn danger" @click="handleDeleteContact" :disabled="!hasSelected">删除选中</button>
           </div>
         </div>
-      </div>
 
-      <!-- 分页控件 -->
-      <div class="pagination-container">
-        <div class="pagination-info">
-          共 {{ contactList.length }} 条，当前第 {{ currentPage }} 页
+        <table class="contact-table">
+          <thead>
+            <tr>
+              <th class="checkbox-column">
+                <input type="checkbox" @change="handleSelectAll" :checked="isAllSelected">
+              </th>
+              <th style="width:100px">联系人名称</th>
+              <th style="width:140px">邮箱地址</th>
+              <th style="width:100px">备注</th>
+              <th style="width:100px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in paginatedContactList" :key="row.userId">
+              <td class="checkbox-column">
+                <input type="checkbox" :checked="selectedContacts.includes(row)"
+                  @change="(e) => handleRowCheck(row, e.target.checked)">
+              </td>
+              <td>{{ row.userName }}</td>
+              <td>{{ row.email }}</td>
+              <td>{{ row.remarks }}</td>
+              <td class="action-column">
+                <button class="btn text" @click="handleUpdateContact(row)">更新</button>
+                <button class="btn text danger" @click="handleRemoveContact(row)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 添加/更新联系人弹窗 -->
+        <div class="dialog-mask" v-show="dialogVisible">
+          <div class="dialog">
+            <div class="dialog-header">
+              <h2>{{ dialogTitle }}</h2>
+              <button class="dialog-close" @click="dialogVisible = false">×</button>
+            </div>
+            <div class="dialog-body">
+              <form class="dialog-form" ref="dialogFormRef">
+                <div class="form-item">
+                  <label class="form-label">联系人名称</label>
+                  <input class="form-input" v-model="dialogForm.userName" placeholder="请输入联系人名称">
+                  <p class="error-message" v-if="dialogErrors.name">
+                    {{ dialogErrors.name }}
+                  </p>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">邮箱地址</label>
+                  <input class="form-input" v-model="dialogForm.email" placeholder="请输入邮箱地址">
+                  <p class="error-message" v-if="dialogErrors.email">
+                    {{ dialogErrors.email }}
+                  </p>
+                </div>
+                <div class="form-item">
+                  <label class="form-label">备注</label>
+                  <textarea class="form-textarea" v-model="dialogForm.remarks" :rows="3"></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="dialog-footer">
+              <button class="btn default" @click="dialogVisible = false">取消</button>
+              <button class="btn primary" v-show="addCotactVisible" @click="confirmAddContact()">提交</button>
+              <button class="btn primary" v-show="updateCotactVisible" @click="confirmUpdateContact()">确认</button>
+            </div>
+          </div>
         </div>
-        <div class="pagination-controls">
-          <button class="btn" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
-          <button class="btn" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
-          <select class="page-size-select" @change="handlePageSizeChange">
-            <option :value="size" v-for="size in [10, 20, 50]" :key="size">
-              {{ size }} 条/页
-            </option>
-          </select>
+
+        <!-- 确认删除对话框容器 -->
+        <div class="confirm-mask" v-if="confirmDeleteVisible">
+          <div class="confirm-dialog">
+            <div class="confirm-header">
+              <h3>{{ confirmDeleteTitle }}</h3>
+              <button class="confirm-close" @click="handleCancle">×</button>
+            </div>
+            <div class="confirm-body">
+              {{ confirmDeleteContent.text }}
+            </div>
+            <div class="confirm-footer">
+              <button class="btn " @click="handleCancle">取消</button>
+              <button class="btn danger" @click="confirmDelete">确定</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container">
+          <div class="pagination-info">
+            共 {{ contactList.length }} 条，当前第 {{ currentPage }} 页
+          </div>
+          <div class="pagination-controls">
+            <button class="btn" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
+            <button class="btn" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
+            <select class="page-size-select" @change="handlePageSizeChange">
+              <option :value="size" v-for="size in [10, 20, 50]" :key="size">
+                {{ size }} 条/页
+              </option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
-import { getConfig, putConfig } from '../api/messages/config';
-import { getContactList } from '../api/messages/contact';
+import { ref, computed, inject } from 'vue';
+import SidebarNav from '../components/SidebarNav.vue';
+import { getConfig, updateConfig } from '../api/messages/config';
+import { getContactList, addContact, updateContact, deleteContact } from '../api/messages/contact';
 
 const showMessage = inject('showMessage');
-// 状态定义
-// const activeTab = ref('email')
-// const tabs = ref([
-//   { label: '发送邮箱配置', name: 'email' }
-// ])
+
+// 处理导航点击
+const handleNavClick = (item) => {
+  console.log('点击了', item.label);
+  // 可以在这里处理路由跳转等逻辑
+};
+
+// 处理导航折叠状态变化
+const handleNavToggle = (isCollapsed) => {
+  console.log('导航状态：', isCollapsed ? '折叠' : '展开');
+};
 
 const currentPage = ref(1);
 const pageSize = ref(10);
 const selectedContacts = ref([]);
-const errorMessage = ref('');
 
 // 获取发送邮箱配置
 const configForm = ref({});
@@ -173,16 +176,15 @@ const fetchConfig = async () => {
     const data = await getConfig();
     configForm.value = data[0];
   } catch (err) {
-    errorMessage.value = `加载信息失败，请稍后重试`;
     console.error(err);
-    showMessage('加载信息失败，请稍后重试', 'error');
+    showMessage.error('获取信息失败，请稍后重试');
   }
 };
 fetchConfig();
 
 // 更新发送邮箱配置
 const handleUpdateConfig = async () => {
-  console.log('showMessage是否存在：', showMessage);
+  // console.log('showMessage是否存在：', showMessage);
   const configData = {
     id: configForm.value.id, // 从现有配置中获取ID
     sendEmail: configForm.value.sendEmail,
@@ -191,9 +193,8 @@ const handleUpdateConfig = async () => {
     smtpPort: configForm.value.smtpPort,
     grantCode: configForm.value.grantCode
   };
-  console.log(configForm.value.smtpPort,configData,'oppop')
   try {
-    const response = await putConfig(configData);
+    const response = await updateConfig(configData);
     // 处理失败响应
     showMessage.success('配置更新成功！');
     fetchConfig(); // 重新查询最新配置
@@ -205,11 +206,14 @@ const handleUpdateConfig = async () => {
       // showMessage.error('网络异常，请稍后重试');
     }
   }
-}
+};
 
-// 加载联系人邮箱列表
+/**
+ * 联系人邮箱列表相关
+ */
+// 获取联系人邮箱列表
 const contactList = ref([]);
-const loadContactList = async () => {
+const fetchContactList = async () => {
   currentPage.value = 1;
   try {
     const params = {
@@ -219,178 +223,171 @@ const loadContactList = async () => {
     const data = await getContactList(params);
     contactList.value = data.content.map(item => ({
       ...item,
-       userId: item.userId,
-       userName: item.userName,
+      userId: item.userId,
+      userName: item.userName,
     }));
   } catch (err) {
-    errorMessage.value = `加载信息失败，请稍后重试`;
-    console.error(err);
-    showMessage('加载信息失败，请稍后重试', 'error');
+    showMessage.error('获取信息失败，请稍后重试');
   }
 };
-loadContactList();
+fetchContactList();
 
-// 弹窗相关
-const dialogVisible = ref(false)
-const dialogTitle = ref('添加联系人')
-const dialogForm = ref({
-  id: null,
-  name: '',
-  email: '',
-  remark: ''
-})
-const dialogErrors = ref({
-  name: '',
-  email: ''
-})
-
-// 确认对话框相关（原生实现）
-const confirmVisible = ref(false)
-const confirmTitle = ref('提示')
-const confirmContent = ref('')
-const confirmCallback = ref(null) // 确认后的回调函数
-
-// 计算属性
-const hasSelected = computed(() => selectedContacts.value.length > 0)
+// 计算处理联系人邮箱列表
+const hasSelected = computed(() => selectedContacts.value.length > 0);
 const paginatedContactList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return contactList.value.slice(start, start + pageSize.value)
-})
-const totalPages = computed(() => Math.ceil(contactList.value.length / pageSize.value))
+  const start = (currentPage.value - 1) * pageSize.value;
+  return contactList.value.slice(start, start + pageSize.value);
+});
+const totalPages = computed(() => Math.ceil(contactList.value.length / pageSize.value));
 const isAllSelected = computed(() => {
   return (
     paginatedContactList.value.length > 0 &&
     selectedContacts.value.length === paginatedContactList.value.length
-  )
-})
+  );
+});
+// 添加/更新联系人弹窗相关
+const dialogVisible = ref(false);
+const addCotactVisible = ref(false);// 添加联系人显示
+const updateCotactVisible = ref(false);// 更新联系人显示
+const dialogTitle = ref('添加联系人');
+const dialogForm = ref({
+  userId: null,
+  userName: '',
+  email: '',
+  remarks: ''
+});
+const dialogErrors = ref({
+  name: '',
+  email: ''
+});
+// 确认删除对话框实现
+const confirmDeleteVisible = ref(false);
+const confirmDeleteTitle = ref('提示');
+const confirmDeleteContent = ref({
+  text: '',
+  userId: null
+});
 
-// 确认对话框实现
-const showConfirm = (content, callback) => {
-  confirmContent.value = content;
-  confirmCallback.value = callback;
-  confirmVisible.value = true;
+// 弹窗/对话框取消按钮
+const handleCancle = () => {
+  dialogVisible.value = false;
+  confirmDeleteVisible.value = false;
+
 };
-
-// 确认对话框回调
-const handleConfirmOk = () => {
-  confirmVisible.value = false;
-  if (typeof confirmCallback.value === 'function') {
-    confirmCallback.value(true); // 确认
+// 添加联系人邮箱操作
+const handleAddContact = () => {
+  updateCotactVisible.value = false;
+  addCotactVisible.value = true;
+  dialogTitle.value = '添加联系人';
+  dialogForm.value = { id: null, name: '', email: '', remark: '' };
+  dialogErrors.value = { name: '', email: '' };
+  dialogVisible.value = true;
+};
+// 确认添加联系人邮箱
+const confirmAddContact = async () => {
+  const addContactData = {
+    userName: dialogForm.value.userName,
+    email: dialogForm.value.email,
+    remarks: dialogForm.value.remarks || ''
+  };
+  console.log(addContactData, '添加联系人邮箱');
+  try {
+    const response = await addContact(addContactData);
+    // 处理失败响应
+    showMessage.success('添加联系人邮箱成功！');
+    dialogVisible.value = false;
+    fetchContactList(); // 重新查询最新联系人邮箱列表
+  } catch (error) {
+    // 处理失败响应
+    showMessage.error(`添加失败：${error.response.data.message}`);
   }
 };
-const handleConfirmCancel = () => {
-  confirmVisible.value = false;
-  if (typeof confirmCallback.value === 'function') {
-    confirmCallback.value(false); // 取消
+// 更新联系人邮箱操作
+const handleUpdateContact = (row) => {
+  addCotactVisible.value = false;
+  updateCotactVisible.value = true;
+  dialogTitle.value = '更新联系人';
+  dialogForm.value = { ...row };
+  // console.log(dialogForm.value.email,'更新')
+  dialogErrors.value = { name: '', email: '' };
+  dialogVisible.value = true;
+};
+// 确认更新联系人邮箱
+const confirmUpdateContact = async () => {
+  const userId = dialogForm.value.userId;
+  const updateContactData = {
+    userName: dialogForm.value.userName,
+    email: dialogForm.value.email,
+    remarks: dialogForm.value.remarks || ''
+  };
+  console.log(userId, updateContactData, '更新联系人邮箱');
+  try {
+    const response = await updateContact(userId, updateContactData);
+    // 处理失败响应
+    showMessage.success('更新联系人邮箱成功！');
+    fetchContactList(); // 重新查询最新联系人邮箱列表
+  } catch (error) {
+    // 处理失败响应
+    showMessage.error(`更新失败`);
   }
 };
+// 删除联系人邮箱操作
+const handleRemoveContact = (row) => {
+  confirmDeleteVisible.value = true;
+  confirmDeleteContent.value.text = `确定要删除联系人"${row.userName}"吗?`;
+  confirmDeleteContent.value.userId = row.userId;
+};
+// 确认删除联系人邮箱
+const confirmDelete = async () => {
+  const userId = confirmDeleteContent.value.userId;
+  try {
+    await deleteContact(userId);
+    showMessage.success('删除联系人邮箱成功！');
+    fetchContactList(); // 重新查询最新联系人邮箱列表
+  } catch (error) {
+    // 处理失败响应
+    showMessage.error(`删除失败`);
+  }
 
-// 方法
+  confirmDeleteVisible.value = false;
+};
+
+// 删除选中/批量删除
+const handleDeleteContact = () => {
+  confirmDeleteVisible.value = true;
+  confirmDeleteContent.value.text = `确定要删除选中的${selectedContacts.value.length}个联系人吗?`;
+};
+// 全选
 const handleSelectAll = (e) => {
   if (e.target.checked) {
-    selectedContacts.value = [...paginatedContactList.value]
+    selectedContacts.value = [...paginatedContactList.value];
   } else {
-    selectedContacts.value = []
+    selectedContacts.value = [];
   }
-}
-
+};
+// 单行选中
 const handleRowCheck = (row, isChecked) => {
   if (isChecked) {
-    selectedContacts.value.push(row)
+    selectedContacts.value.push(row);
   } else {
-    selectedContacts.value = selectedContacts.value.filter(item => item.id !== row.id)
+    selectedContacts.value = selectedContacts.value.filter(item => item.id !== row.id);
   }
-}
+};
 
+/**
+ * 分页控件相关
+ */
+// 页码切换
 const handlePageSizeChange = (e) => {
-  pageSize.value = parseInt(e.target.value)
-  currentPage.value = 1
-  loadContactList();
-}
-
+  pageSize.value = parseInt(e.target.value);
+  currentPage.value = 1;
+  fetchContactList();
+};
+// 页号切换
 const handleCurrentChange = (val) => {
-  currentPage.value = val
-  selectedContacts.value = []
-}
-
-const handleAdd = () => {
-  dialogTitle.value = '添加联系人'
-  dialogForm.value = { id: null, name: '', email: '', remark: '' }
-  dialogErrors.value = { name: '', email: '' }
-  dialogVisible.value = true
-}
-
-const handleEdit = (row) => {
-  dialogTitle.value = '编辑联系人'
-  dialogForm.value = { ...row }
-  dialogErrors.value = { name: '', email: '' }
-  dialogVisible.value = true
-}
-
-const confirmDialog = () => {
-  let hasError = false
-  // 名称校验
-  if (!dialogForm.value.name.trim()) {
-    dialogErrors.value.name = '请输入联系人名称'
-    hasError = true
-  } else {
-    dialogErrors.value.name = ''
-  }
-  // 邮箱校验
-  const validateEmail = (value) => {
-    const emailReg = /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
-    if (!value) return '请输入邮箱地址'
-    if (!emailReg.test(value)) return '请输入正确的邮箱格式'
-    return ''
-  }
-  const emailError = validateEmail(dialogForm.value.email)
-  if (emailError) {
-    dialogErrors.value.email = emailError
-    hasError = true
-  } else {
-    dialogErrors.value.email = ''
-  }
-
-  if (hasError) return
-
-  if (dialogForm.value.id) {
-    // 编辑
-    const index = contactList.value.findIndex(item => item.id === dialogForm.value.id)
-    if (index !== -1) {
-      contactList.value.splice(index, 1, dialogForm.value)
-      showMessage('修改成功');
-    }
-  } else {
-    // 添加
-    dialogForm.value.id = Date.now()
-    contactList.value.push(dialogForm.value)
-    showMessage('添加成功');
-  }
-  dialogVisible.value = false
-}
-
-const handleRemove = (row) => {
-  showConfirm(`确定要删除联系人"${row.userName}"吗?`, (confirmed) => {
-    if (confirmed) {
-      const index = contactList.value.findIndex(item => item. userId === row. userId)
-      if (index !== -1) {
-        contactList.value.splice(index, 1)
-        showMessage('删除成功');
-      }
-    }
-  });
-}
-
-const handleDelete = () => {
-  showConfirm(`确定要删除选中的${selectedContacts.value.length}个联系人吗?`, (confirmed) => {
-    if (confirmed) {
-      const ids = selectedContacts.value.map(item => item.id)
-      contactList.value = contactList.value.filter(item => !ids.includes(item.id))
-      selectedContacts.value = []
-      showMessage('删除成功');
-    }
-  });
-}
+  currentPage.value = val;
+  selectedContacts.value = [];
+};
 </script>
 
 <style scoped>
@@ -398,6 +395,11 @@ const handleDelete = () => {
 html {
   /* 基础布局属性 */
   font-size: 14px;
+}
+
+.app-container {
+  display: flex;
+  /* 横向排列侧边栏和主内容 */
 }
 
 .contact-config-container {
@@ -450,6 +452,7 @@ html {
 
   color: #333;
   font-size: 20px;
+  font-weight: 600;
 }
 
 /* 邮箱表单样式（浮动背景板 + 两行三列布局） */
@@ -522,7 +525,9 @@ html {
 .contact-title {
   color: #333;
   font-size: 20px;
+  font-weight: 600;
 }
+
 .action-buttons {
   /* 基础布局属性 */
   display: flex;
@@ -760,6 +765,10 @@ html {
   /* 过渡动画 */
 }
 
+.btn.default {
+  background-color: #6b7280;
+}
+
 .btn.primary {
   /* 视觉表现属性 */
   background-color: #409eff;
@@ -794,8 +803,7 @@ html {
   /* 视觉表现属性 */
   background: transparent;
   color: #409eff;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 15px;
 }
 
 .btn.text:hover {

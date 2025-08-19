@@ -6,6 +6,6 @@ export const getConfig = (params) => {
 };
 
 // 发送邮箱配置更新接口
-export const putConfig = (params) => {
+export const updateConfig = (params) => {
   return request.put('/messages/config', params );
 };

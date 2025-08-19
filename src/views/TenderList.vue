@@ -372,7 +372,7 @@ onMounted(() => {
   handleRefresh();
   window.addEventListener('scroll', handleScroll);
 
-  // 初始化观察者
+  // 初始化观察者 
   initObserver();
 });
 
