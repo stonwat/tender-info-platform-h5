@@ -131,8 +131,10 @@
             共 {{ totalContacts }} 条，当前第 {{ currentPage }} 页
           </div>
           <div class="pagination-controls">
-            <button class="btn" style="color: black;" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
-            <button class="btn" style="color: black;" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
+            <button class="btn" style="color: black;"
+              @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
+            <button class="btn" style="color: black;"
+              @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
             <select class="page-size-select" @change="handlePageSizeChange">
               <option :value="size" v-for="size in [10, 20, 50]" :key="size">
                 {{ size }} 条/页
@@ -195,10 +197,14 @@ const handleUpdateConfig = async () => {
   };
   try {
     const res = await updateConfig(configData);
-    console.log(res,'data')
-    // 处理失败响应
-    showMessage.success('配置更新成功！');
-    fetchConfig(); // 重新查询最新配置
+    console.log(res, 'data')
+    if (res.code === 200) { // 假设 200 代表成功
+      showMessage.success('配置更新成功！');
+      fetchConfig(); // 重新查询最新配置
+    } else {
+      // 处理业务错误（有明确错误信息）
+      showMessage.error(`更新失败：${res.msg || '未知错误'}`);
+    }
   } catch (error) {
     // 处理失败响应
     if (error.response?.data?.message) {
@@ -221,17 +227,22 @@ const fetchContactList = async () => {
       size: pageSize.value,
     };
     const res = await getContactList(params);
-    
-    contactList.value = res.data.content.map(item => ({
-      ...item,
-      userId: item.userId,
-      userName: item.userName,
-    }));
-    totalContacts.value = res.data.totalElements;
-    totalPages.value = Math.ceil(totalContacts.value / pageSize.value);
-    console.log(res.data,'fsdds',totalPages)
+    if (res.code === 200) { // 假设 200 代表成功
+      contactList.value = res.data.content.map(item => ({
+        ...item,
+        userId: item.userId,
+        userName: item.userName,
+      }));
+      totalContacts.value = res.data.totalElements;
+      totalPages.value = Math.ceil(totalContacts.value / pageSize.value);
+      console.log(res.data, 'fsdds', totalPages)
+    } else {
+      // 处理业务错误（有明确错误信息）
+      showMessage.error(`获取信息失败：${res.msg || '未知错误'}`);
+    }
+
   } catch (err) {
-    showMessage.error('获取信息失败，请稍后重试2');
+    showMessage.error('获取信息失败，请稍后重试');
   }
 };
 fetchContactList();
@@ -294,14 +305,17 @@ const confirmAddContact = async () => {
     remarks: dialogForm.value.remarks || ''
   };
   try {
-    const response = await addContact(addContactData);
-    // 处理失败响应
-    showMessage.success('添加联系人邮箱成功！');
-    dialogVisible.value = false;
-    fetchContactList(); // 重新查询最新联系人邮箱列表
+    const res = await addContact(addContactData);
+    if (res.code == 200) {
+      showMessage.success('添加联系人邮箱成功！');
+      dialogVisible.value = false;
+      fetchContactList();
+    } else {
+      showMessage.error(`添加联系人邮箱失败：${res.msg || '未知错误'}`);
+    }
+
   } catch (error) {
-    // 处理失败响应
-    showMessage.error(`添加失败：${error.response.data.message}`);
+    showMessage.error(`网络异常`);
   }
 };
 // 更新联系人邮箱操作
@@ -310,7 +324,6 @@ const handleUpdateContact = (row) => {
   updateCotactVisible.value = true;
   dialogTitle.value = '更新联系人';
   dialogForm.value = { ...row };
-  // console.log(dialogForm.value.email,'更新')
   dialogErrors.value = { name: '', email: '' };
   dialogVisible.value = true;
 };
@@ -323,10 +336,14 @@ const confirmUpdateContact = async () => {
     remarks: dialogForm.value.remarks || ''
   };
   try {
-    const response = await updateContact(userId, updateContactData);
-    // 处理失败响应
-    showMessage.success('更新联系人邮箱成功！');
-    fetchContactList(); // 重新查询最新联系人邮箱列表
+    const res = await updateContact(userId, updateContactData);
+    if (res.code == 200) {
+      showMessage.success('更新联系人邮箱成功！');
+      dialogVisible.value = false;
+      fetchContactList();
+    } else {
+      showMessage.error(`更新联系人邮箱失败：${res.msg || '未知错误'}`);
+    }
   } catch (error) {
     // 处理失败响应
     showMessage.error(`更新失败`);
@@ -342,14 +359,17 @@ const handleRemoveContact = (row) => {
 const confirmDelete = async () => {
   const userId = confirmDeleteContent.value.userId;
   try {
-    await deleteContact(userId);
-    showMessage.success('删除联系人邮箱成功！');
-    fetchContactList(); // 重新查询最新联系人邮箱列表
+    const res = await deleteContact(userId);
+    if (res.code == 200) {
+      showMessage.success('删除联系人邮箱成功！');
+      fetchContactList();
+    }else {
+      showMessage.error(`删除联系人邮箱失败：${res.msg || '未知错误'}`);
+    }
   } catch (error) {
     // 处理失败响应
     showMessage.error(`删除失败`);
   }
-
   confirmDeleteVisible.value = false;
 };
 
@@ -387,7 +407,7 @@ const handlePageSizeChange = (e) => {
 // 页号切换
 const handleCurrentChange = (val) => {
   currentPage.value = val;
-  console.log(val,currentPage.value)
+  console.log(val, currentPage.value)
   selectedContacts.value = [];
   fetchContactList();
 };
