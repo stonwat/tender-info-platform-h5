@@ -55,7 +55,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, index) in paginatedContactList" :key="row.userId">
+            <tr v-for="(row, index) in contactList" :key="row.userId">
               <td class="checkbox-column">
                 <input type="checkbox" :checked="selectedContacts.includes(row)"
                   @change="(e) => handleRowCheck(row, e.target.checked)">
@@ -128,11 +128,11 @@
         <!-- 分页控件 -->
         <div class="pagination-container">
           <div class="pagination-info">
-            共 {{ contactList.length }} 条，当前第 {{ currentPage }} 页
+            共 {{ totalContacts }} 条，当前第 {{ currentPage }} 页
           </div>
           <div class="pagination-controls">
-            <button class="btn" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
-            <button class="btn" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
+            <button class="btn" style="color: black;" @click="currentPage > 1 && handleCurrentChange(currentPage - 1)">上一页</button>
+            <button class="btn" style="color: black;" @click="currentPage < totalPages && handleCurrentChange(currentPage + 1)">下一页</button>
             <select class="page-size-select" @change="handlePageSizeChange">
               <option :value="size" v-for="size in [10, 20, 50]" :key="size">
                 {{ size }} 条/页
@@ -156,35 +156,35 @@ const showMessage = inject('showMessage');
 
 // 处理导航点击
 const handleNavClick = (item) => {
-  console.log('点击了', item.label);
-  // 可以在这里处理路由跳转等逻辑
+
 };
 
 // 处理导航折叠状态变化
 const handleNavToggle = (isCollapsed) => {
-  console.log('导航状态：', isCollapsed ? '折叠' : '展开');
 };
 
+// 分页控件
 const currentPage = ref(1);
 const pageSize = ref(10);
+const totalContacts = ref(0);
+const totalPages = ref(0);
 const selectedContacts = ref([]);
 
 // 获取发送邮箱配置
 const configForm = ref({});
 const fetchConfig = async () => {
   try {
-    const data = await getConfig();
-    configForm.value = data[0];
+    const res = await getConfig();
+    configForm.value = res.data[0];
   } catch (err) {
     console.error(err);
-    showMessage.error('获取信息失败，请稍后重试');
+    showMessage.error('获取信息失败，请稍后重试1');
   }
 };
 fetchConfig();
 
 // 更新发送邮箱配置
 const handleUpdateConfig = async () => {
-  // console.log('showMessage是否存在：', showMessage);
   const configData = {
     id: configForm.value.id, // 从现有配置中获取ID
     sendEmail: configForm.value.sendEmail,
@@ -194,7 +194,8 @@ const handleUpdateConfig = async () => {
     grantCode: configForm.value.grantCode
   };
   try {
-    const response = await updateConfig(configData);
+    const res = await updateConfig(configData);
+    console.log(res,'data')
     // 处理失败响应
     showMessage.success('配置更新成功！');
     fetchConfig(); // 重新查询最新配置
@@ -214,20 +215,23 @@ const handleUpdateConfig = async () => {
 // 获取联系人邮箱列表
 const contactList = ref([]);
 const fetchContactList = async () => {
-  currentPage.value = 1;
   try {
     const params = {
       page: currentPage.value - 1,
       size: pageSize.value,
     };
-    const data = await getContactList(params);
-    contactList.value = data.content.map(item => ({
+    const res = await getContactList(params);
+    
+    contactList.value = res.data.content.map(item => ({
       ...item,
       userId: item.userId,
       userName: item.userName,
     }));
+    totalContacts.value = res.data.totalElements;
+    totalPages.value = Math.ceil(totalContacts.value / pageSize.value);
+    console.log(res.data,'fsdds',totalPages)
   } catch (err) {
-    showMessage.error('获取信息失败，请稍后重试');
+    showMessage.error('获取信息失败，请稍后重试2');
   }
 };
 fetchContactList();
@@ -238,7 +242,6 @@ const paginatedContactList = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return contactList.value.slice(start, start + pageSize.value);
 });
-const totalPages = computed(() => Math.ceil(contactList.value.length / pageSize.value));
 const isAllSelected = computed(() => {
   return (
     paginatedContactList.value.length > 0 &&
@@ -290,7 +293,6 @@ const confirmAddContact = async () => {
     email: dialogForm.value.email,
     remarks: dialogForm.value.remarks || ''
   };
-  console.log(addContactData, '添加联系人邮箱');
   try {
     const response = await addContact(addContactData);
     // 处理失败响应
@@ -320,7 +322,6 @@ const confirmUpdateContact = async () => {
     email: dialogForm.value.email,
     remarks: dialogForm.value.remarks || ''
   };
-  console.log(userId, updateContactData, '更新联系人邮箱');
   try {
     const response = await updateContact(userId, updateContactData);
     // 处理失败响应
@@ -386,60 +387,63 @@ const handlePageSizeChange = (e) => {
 // 页号切换
 const handleCurrentChange = (val) => {
   currentPage.value = val;
+  console.log(val,currentPage.value)
   selectedContacts.value = [];
+  fetchContactList();
 };
 </script>
 
 <style scoped>
-/* 基础样式（全局） */
+/* 基础布局属性 - 全局基础 */
 html {
-  /* 基础布局属性 */
   font-size: 14px;
 }
 
 .app-container {
   display: flex;
-  /* 横向排列侧边栏和主内容 */
 }
 
+/* 基础布局属性 - 容器 */
 .contact-config-container {
-  /* 基础布局属性 */
   padding: 1rem;
   min-height: calc(100vh - 2rem);
-  /* 视觉表现属性 */
-  background-color: #f5f7fa;
-  /* 外层背景色，突出浮动面板 */
 }
 
+/* 视觉表现属性 - 容器 */
+.contact-config-container {
+  background-color: #f5f7fa;
+}
 
-/* 标签页样式 */
+/* 基础布局属性 - 标签页 */
 .tabs {
-  /* 基础布局属性 */
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .tab-item {
-  /* 基础布局属性 */
   padding: 0.5rem 1rem;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 标签页 */
+.tab-item {
   border: 1px solid #e6e6e6;
   border-radius: 4px;
-  /* 动态交互属性 */
-  cursor: pointer;
 }
 
 .tab-item.active {
-  /* 视觉表现属性 */
   background-color: #409eff;
   color: #fff;
   border-color: #409eff;
 }
 
+/* 基础布局属性 - 邮箱配置 */
 .email-config {
   min-height: 30vh;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 邮箱配置 */
+.email-config {
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -449,15 +453,17 @@ html {
   display: flex;
   justify-content: space-between;
   padding: 10px 20px 0 12px;
+}
 
+/* 视觉表现属性 - 邮箱标题 */
+.email-title {
   color: #333;
   font-size: 20px;
   font-weight: 600;
 }
 
-/* 邮箱表单样式（浮动背景板 + 两行三列布局） */
+/* 基础布局属性 - 邮箱表单 */
 .email-form {
-  /* 基础布局属性 */
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -467,47 +473,49 @@ html {
   margin-bottom: 1rem;
 }
 
-/* 表单项样式 */
+/* 基础布局属性 - 表单项 */
 .form-item {
-  /* 基础布局属性 */
   display: flex;
   align-items: center;
   width: 100%;
-  /* 三列布局，预留间距 */
   gap: 0.8rem;
-  /* label与input间距 */
 }
 
 .form-label {
-  /* 基础布局属性 */
   width: 100px;
-  /* 固定宽度，避免文字长短不一 */
   text-align: right;
   flex-shrink: 0;
-  /* 不收缩 */
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 表单项文字 */
+.form-label {
   font-size: 1rem;
   color: #666;
 }
 
+/* 基础布局属性 - 表单输入 */
 .form-input,
 .form-textarea {
-  /* 基础布局属性 */
   padding: 0.5rem 0.8rem;
   flex-grow: 1;
+}
 
-  /* 视觉表现属性 */
+/* 视觉表现属性 - 表单输入 */
+.form-input,
+.form-textarea {
   border: 1px solid #dcdcdc;
   border-radius: 4px;
 }
 
-/* 列表区域样式 */
+/* 基础布局属性 - 列表区域 */
 .contact-list-section {
-  /* 基础布局属性 */
   min-height: calc(70vh - 60px);
   padding: 1rem;
   margin-top: 1rem;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 列表区域 */
+.contact-list-section {
   background: #ffffff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e6e6e6;
@@ -515,63 +523,61 @@ html {
 }
 
 .section-header {
-  /* 基础布局属性 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
+/* 视觉表现属性 - 列表标题 */
 .contact-title {
   color: #333;
   font-size: 20px;
   font-weight: 600;
 }
 
+/* 基础布局属性 - 操作按钮组 */
 .action-buttons {
-  /* 基础布局属性 */
   display: flex;
   gap: 1rem;
 }
 
-
-/* 表格样式 */
+/* 基础布局属性 - 表格 */
 .contact-table {
-  /* 基础布局属性 */
   width: 100%;
-  /* 视觉表现属性 */
+}
+
+.contact-table th,
+.contact-table td {
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* 视觉表现属性 - 表格边框 */
+.contact-table {
   border-collapse: collapse;
 }
 
 .contact-table th,
 .contact-table td {
-  /* 基础布局属性 */
-  padding: 0.5rem;
-  text-align: center;
-  /* 视觉表现属性 */
   border: 1px solid #e6e6e6;
 }
 
 .checkbox-column,
 .action-column {
-  /* 基础布局属性 */
   width: 20px;
 }
 
-
-/* 分页样式 */
+/* 基础布局属性 - 分页 */
 .pagination-container {
-  /* 基础布局属性 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 0.2rem;
 }
 
-
-/* 弹窗样式 */
+/* 基础布局属性 - 弹窗遮罩 */
 .dialog-mask {
-  /* 基础布局属性 */
   position: fixed;
   top: 0;
   left: 0;
@@ -580,35 +586,41 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 弹窗遮罩 */
+.dialog-mask {
   background-color: rgba(0, 0, 0, 0.3);
-  /* 其他辅助属性 */
   z-index: 1000;
 }
 
+/* 基础布局属性 - 弹窗容器 */
 .dialog {
-  /* 基础布局属性 */
   width: 90%;
   max-width: 600px;
   overflow: hidden;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 弹窗容器 */
+.dialog {
   background-color: #ffffff;
   border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dialog-header {
-  /* 基础布局属性 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 弹窗头部边框 */
+.dialog-header {
   border-bottom: 1px solid #e6e6e6;
 }
 
 .dialog-body {
-  /* 基础布局属性 */
   padding: 20px;
 }
 
@@ -617,75 +629,77 @@ html {
 }
 
 .dialog-footer {
-  /* 基础布局属性 */
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 弹窗底部边框 */
+.dialog-footer {
   border-top: 1px solid #e6e6e6;
 }
 
 .dialog-close {
-  /* 基础布局属性 */
   font-size: 18px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 弹窗关闭按钮 */
+.dialog-close {
   background: transparent;
   border: none;
   color: #999;
-  /* 动态交互属性 */
+}
+
+/* 动态交互属性 - 弹窗关闭按钮 */
+.dialog-close {
   cursor: pointer;
 }
 
 .error-message {
-  /* 基础布局属性 */
   margin: 0;
   padding-top: 4px;
   font-size: 12px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 错误提示 */
+.error-message {
   color: #f56c6c;
 }
 
 .message-item {
-  /* 基础布局属性 */
   padding: 12px 20px;
   margin-bottom: 8px;
-  /* 视觉表现属性 */
   border-radius: 4px;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /* 动态交互属性 */
   opacity: 0;
   transform: translateX(100%);
   transition: opacity 0.3s, transform 0.3s;
 }
 
+/* 动态交互属性 - 消息动画 */
 .message-item.show {
-  /* 其他辅助属性 */
   opacity: 1;
   transform: translateX(0);
 }
 
+/* 视觉表现属性 - 消息颜色 */
 .message-item.success {
-  /* 视觉表现属性 */
   background-color: #52c41a;
 }
 
 .message-item.error {
-  /* 视觉表现属性 */
   background-color: #f56c6c;
 }
 
 .message-item.info {
-  /* 视觉表现属性 */
   background-color: #409eff;
 }
 
-
-/* 确认对话框样式 */
+/* 基础布局属性 - 确认弹窗遮罩 */
 .confirm-mask {
-  /* 基础布局属性 */
   position: fixed;
   top: 0;
   left: 0;
@@ -694,134 +708,140 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗遮罩 */
+.confirm-mask {
   background-color: rgba(0, 0, 0, 0.3);
-  /* 其他辅助属性 */
   z-index: 1001;
 }
 
+/* 基础布局属性 - 确认弹窗容器 */
 .confirm-dialog {
-  /* 基础布局属性 */
   width: 90%;
   max-width: 400px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗容器 */
+.confirm-dialog {
   background-color: #fff;
   border-radius: 6px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .confirm-header {
-  /* 基础布局属性 */
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗头部边框 */
+.confirm-header {
   border-bottom: 1px solid #e6e6e6;
 }
 
 .confirm-body {
-  /* 基础布局属性 */
   padding: 20px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗内容 */
+.confirm-body {
   color: #666;
 }
 
 .confirm-footer {
-  /* 基础布局属性 */
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   padding: 10px 20px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗底部边框 */
+.confirm-footer {
   border-top: 1px solid #e6e6e6;
 }
 
 .confirm-close {
-  /* 基础布局属性 */
   font-size: 18px;
-  /* 视觉表现属性 */
+}
+
+/* 视觉表现属性 - 确认弹窗关闭按钮 */
+.confirm-close {
   background: transparent;
   border: none;
   color: #999;
-  /* 动态交互属性 */
+}
+
+/* 动态交互属性 - 确认弹窗关闭按钮 */
+.confirm-close {
   cursor: pointer;
 }
 
-
-/* 按钮样式 */
+/* 基础布局属性 - 按钮 */
 .btn {
-  /* 基础布局属性 */
   padding: 0.5rem 0.6rem;
-  /* 视觉表现属性 */
   border: none;
   border-radius: 4px;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  /* 动态交互属性 */
   cursor: pointer;
   transition: background-color 0.2s;
-  /* 过渡动画 */
 }
 
+/* 视觉表现属性 - 按钮颜色 */
 .btn.default {
   background-color: #6b7280;
 }
 
 .btn.primary {
-  /* 视觉表现属性 */
   background-color: #409eff;
 }
 
 .btn.primary:hover {
-  /* 视觉表现属性 */
   background-color: #66b1ff;
 }
 
 .btn.danger {
-  /* 视觉表现属性 */
   background-color: #f56c6c;
 }
 
 .btn.danger:hover {
-  /* 视觉表现属性 */
   background-color: #f78989;
 }
 
 .btn.success {
-  /* 视觉表现属性 */
   background-color: #52c41a;
 }
 
 .btn.success:hover {
-  /* 视觉表现属性 */
   background-color: #73d13d;
 }
 
 .btn.text {
-  /* 视觉表现属性 */
   background: transparent;
   color: #409eff;
   font-size: 15px;
 }
 
 .btn.text:hover {
-  /* 视觉表现属性 */
   background-color: #f0f7ff;
 }
 
+/* 视觉表现属性 - 禁用按钮 */
 .btn:disabled {
-  /* 视觉表现属性 */
   opacity: 0.6;
-  /* 动态交互属性 */
+}
+
+/* 动态交互属性 - 禁用按钮 */
+.btn:disabled {
   cursor: not-allowed;
 }
 
 /* 响应式适配（小屏幕单列布局） */
 @media (max-width: 768px) {
   .form-item {
-    /* 基础布局属性 */
     width: 100%;
   }
 }

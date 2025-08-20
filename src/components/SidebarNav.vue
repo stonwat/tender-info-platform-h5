@@ -115,141 +115,143 @@ const wrapperStyle = computed(() => {
 </script>
 
 <style scoped>
-.sidebar-wrapper {
-    /* 基础样式 */
-}
+/* 基础布局属性 */
+.sidebar-wrapper {}
 
 .sidebar {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
+  transition: width 0.3s ease;
 }
 
-/* 折叠状态 */
 .collapsed {
-    overflow: visible;
+  overflow: visible;
 }
 
 .nav-title {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    /* 分隔线 */
-    transition: padding 0.3s ease;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: padding 0.3s ease;
 }
 
 .title-logo {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    /* 保持图片比例 */
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
-/* 标题文字 */
 .title-text {
-    margin-left: 12px;
-    font-size: 18px;
-    font-weight: 500;
-    white-space: nowrap;
-    /* 防止文字换行 */
+  margin-left: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .nav-container {
-    display: flex;
-    flex-direction: row;
-    height: calc(100vh-60px);
+  position: fixed;
+  display: flex;
+  flex-direction: row;
+  margin-top: 60px;
+  height: 100%;
+  width: 220px;
+  overflow: auto;
+  transition: width 0.3s ease;
 }
 
-/* 切换按钮 */
+.collapsed .nav-container {
+  width: 70px;
+}
+
 .toggle-btn {
-    position: absolute;
-    top: 51%;
-    right: 5px;
-    margin: 0 auto;
-    background: transparent;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    transition: transform 0.2s ease;
+  position: absolute;
+  top: 51%;
+  right: 5px;
+  margin: 0 auto;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .collapsed .toggle-btn {
-    position: absolute;
-    top: 51%;
-    right: -5px;
+  position: absolute;
+  top: 51%;
+  right: -5px;
+  transition: transform 0.2s ease;
 }
 
 .toggle-icon {
-    transition: transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .rotate {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
-/* 导航菜单 */
 .nav-menu {
-    flex: 1;
+  flex: 1;
 }
 
 .menu-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .menu-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 20px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    color: inherit;
-}
-
-.menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.menu-item.active {
-    background-color: v-bind(activeColor);
-    color: white;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: inherit;
 }
 
 .menu-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
 }
 
 .menu-text {
-    margin-left: 16px;
-    transition: opacity 0.3s ease;
-    white-space: nowrap;
+  margin-left: 16px;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
 }
 
-/* 移动端遮罩 */
 .sidebar-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-    transition: opacity 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+  transition: opacity 0.3s ease;
 }
 
-/* 响应式调整 */
 @media (max-width: 768px) {
-    .sidebar:not(.collapsed) {
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    }
+  .sidebar:not(.collapsed) {
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 视觉表现属性（补充归类） */
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.active {
+  background-color: v-bind(activeColor);
+  color: white;
 }
 </style>
