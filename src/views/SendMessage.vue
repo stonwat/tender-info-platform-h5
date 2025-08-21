@@ -3,12 +3,18 @@
     <SidebarNav @changeRouter="handleNavClick" @toggleCollapse="handleNavToggle" />
     <div class="contact-config-container">
       <!-- 发送邮箱配置区域 -->
+      <div v-if="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">加载中...</span>
+      </div>
       <div class="email-config">
         <div class="email-title">
           发送邮箱配置
           <button class="btn success" @click="handleUpdateConfig">保存配置</button>
         </div>
+
         <div class="email-form">
+
           <div class="form-item">
             <label class="form-label">发送邮箱</label>
             <input class="form-input" v-model="configForm.sendEmail" placeholder="请输入发送邮箱地址">
@@ -41,7 +47,6 @@
             <button class="btn danger" @click="handleDeleteContacts" :disabled="!hasSelected">删除选中</button>
           </div>
         </div>
-
         <table class="contact-table">
           <thead>
             <tr>
@@ -158,13 +163,13 @@ import { getContactList, addContact, updateContact, deleteContact, deleteContact
 const showMessage = inject('showMessage');
 
 // 处理导航点击
-const handleNavClick = (item) => {
-
-};
+const handleNavClick = (item) => { };
 
 // 处理导航折叠状态变化
-const handleNavToggle = (isCollapsed) => {
-};
+const handleNavToggle = (isCollapsed) => { };
+
+// 加载状态控制
+const loading = ref('false');
 
 // 分页控件
 const currentPage = ref(1);
@@ -177,11 +182,16 @@ const selectedContacts = ref([]);
 const configForm = ref({});
 const fetchConfig = async () => {
   try {
+    loading.value = true; // 开始加载
     const res = await getConfig();
     configForm.value = res.data[0];
   } catch (error) {
     console.error(error);
     showMessage.error('获取信息失败，请稍后重试1');
+  } finally {
+    setTimeout(() => {
+      loading.value = false;
+    },500);
   }
 };
 fetchConfig();
@@ -206,7 +216,6 @@ const handleUpdateConfig = async () => {
       showMessage.error(`更新失败：${res.msg || '未知错误'}`);
     }
   } catch (error) {
-
     if (error.response?.data?.message) {
       // showMessage.error(`更新失败：${error.response.data.message}`);
     } else {
@@ -222,6 +231,7 @@ const handleUpdateConfig = async () => {
 const contactList = ref([]);
 const fetchContactList = async () => {
   try {
+    loading.value = true; // 开始加载
     const params = {
       page: currentPage.value - 1,
       size: pageSize.value,
@@ -241,22 +251,16 @@ const fetchContactList = async () => {
       // 处理业务错误（有明确错误信息）
       showMessage.error(`获取信息失败：${res.msg || '未知错误'}`);
     }
-
   } catch (error) {
     showMessage.error('获取信息失败，请稍后重试');
+  } finally {
+    setTimeout(() => {
+      loading.value = false;
+    },500)
   }
 };
 fetchContactList();
 
-// 计算处理联系人邮箱列表
-const hasSelected = computed(() => selectedContacts.value.length > 0);
-
-const isAllSelected = computed(() => {
-  return (
-    contactList.value.length > 0 &&
-    selectedContacts.value.length === contactList.value.length
-  );
-});
 // 添加/更新联系人弹窗相关
 const dialogVisible = ref(false);
 const addCotactVisible = ref(false);// 添加联系人显示
@@ -363,8 +367,9 @@ const confirmDeleteContact = async () => {
     }
   } catch (error) {
     showMessage.error(`删除失败`);
+  } finally {
+    dialogDelVisible.value = false;
   }
-  dialogDelVisible.value = false;
 };
 
 // 删除选中/批量删除
@@ -384,7 +389,15 @@ const handleRowCheck = (row, isChecked) => {// 单行选中
     selectedContacts.value = selectedContacts.value.filter(item => item.id !== row.id);
   }
 };
+// 计算处理联系人邮箱列表选中状态
+const hasSelected = computed(() => selectedContacts.value.length > 0);
 
+const isAllSelected = computed(() => {
+  return (
+    contactList.value.length > 0 &&
+    selectedContacts.value.length === contactList.value.length
+  );
+});
 // 删除选中联系人邮箱操作
 const handleDeleteContacts = () => {
   dialogDelVisible.value = true;
@@ -405,10 +418,10 @@ const confirmDeleteContacts = async () => {
       showMessage.error(`删除选中的联系人失败：${res.msg} || '未知错误'`);
     }
   } catch (error) {
-
     showMessage.error(`删除失败`);
+  } finally {
+    dialogDelVisible.value = false;
   }
-  dialogDelVisible.value = false;
 };
 
 // 弹窗/对话框取消按钮
@@ -445,6 +458,47 @@ html {
 
 .app-container {
   display: flex;
+}
+
+/* 加载动画样式 */
+.loading {
+  position: absolute;
+  top: 0;
+  left: 220px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  padding: 2rem;
+
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #409eff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-left: 10px;
+  color: #666;
+  font-size: 14px;
 }
 
 /* 基础布局属性 - 容器 */
