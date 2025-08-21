@@ -38,7 +38,7 @@
           <h3 class="contact-title">联系人邮箱列表</h3>
           <div class="action-buttons">
             <button class="btn primary" @click="handleAddContact">添加联系人</button>
-            <button class="btn danger" @click="handleDeleteContact" :disabled="!hasSelected">删除选中</button>
+            <button class="btn danger" @click="handleDeleteContacts" :disabled="!hasSelected">删除选中</button>
           </div>
         </div>
 
@@ -65,7 +65,7 @@
               <td>{{ row.remarks }}</td>
               <td class="action-column">
                 <button class="btn text" @click="handleUpdateContact(row)">更新</button>
-                <button class="btn text danger" @click="handleRemoveContact(row)">删除</button>
+                <button class="btn text danger" @click="handleDeleteContact(row)">删除</button>
               </td>
             </tr>
           </tbody>
@@ -109,18 +109,19 @@
         </div>
 
         <!-- 确认删除对话框容器 -->
-        <div class="confirm-mask" v-if="confirmDeleteVisible">
+        <div class="confirm-mask" v-if="dialogDelVisible">
           <div class="confirm-dialog">
             <div class="confirm-header">
               <h3>{{ confirmDeleteTitle }}</h3>
               <button class="confirm-close" @click="handleCancle">×</button>
             </div>
             <div class="confirm-body">
-              {{ confirmDeleteContent.text }}
+              {{ dialogDelContent.text }}
             </div>
             <div class="confirm-footer">
               <button class="btn " @click="handleCancle">取消</button>
-              <button class="btn danger" @click="confirmDelete">确定</button>
+              <button class="btn danger" v-show="deleteContactVisible" @click="confirmDeleteContact">确定</button>
+              <button class="btn danger" v-show="deleteContactsVisible" @click="confirmDeleteContacts">确定</button>
             </div>
           </div>
         </div>
@@ -152,7 +153,7 @@
 import { ref, computed, inject } from 'vue';
 import SidebarNav from '../components/SidebarNav.vue';
 import { getConfig, updateConfig } from '../api/messages/config';
-import { getContactList, addContact, updateContact, deleteContact } from '../api/messages/contact';
+import { getContactList, addContact, updateContact, deleteContact, deleteContacts } from '../api/messages/contact';
 
 const showMessage = inject('showMessage');
 
@@ -178,8 +179,8 @@ const fetchConfig = async () => {
   try {
     const res = await getConfig();
     configForm.value = res.data[0];
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
     showMessage.error('获取信息失败，请稍后重试1');
   }
 };
@@ -197,7 +198,6 @@ const handleUpdateConfig = async () => {
   };
   try {
     const res = await updateConfig(configData);
-    console.log(res, 'data')
     if (res.code === 200) { // 假设 200 代表成功
       showMessage.success('配置更新成功！');
       fetchConfig(); // 重新查询最新配置
@@ -206,7 +206,7 @@ const handleUpdateConfig = async () => {
       showMessage.error(`更新失败：${res.msg || '未知错误'}`);
     }
   } catch (error) {
-    // 处理失败响应
+
     if (error.response?.data?.message) {
       // showMessage.error(`更新失败：${error.response.data.message}`);
     } else {
@@ -228,20 +228,21 @@ const fetchContactList = async () => {
     };
     const res = await getContactList(params);
     if (res.code === 200) { // 假设 200 代表成功
-      contactList.value = res.data.content.map(item => ({
-        ...item,
-        userId: item.userId,
-        userName: item.userName,
-      }));
+      contactList.value = res.data.content.map(item => {
+        return {
+          ...item,
+          userId: item.userId,
+          userName: item.userName,
+        };
+      });
       totalContacts.value = res.data.totalElements;
       totalPages.value = Math.ceil(totalContacts.value / pageSize.value);
-      console.log(res.data, 'fsdds', totalPages)
     } else {
       // 处理业务错误（有明确错误信息）
       showMessage.error(`获取信息失败：${res.msg || '未知错误'}`);
     }
 
-  } catch (err) {
+  } catch (error) {
     showMessage.error('获取信息失败，请稍后重试');
   }
 };
@@ -249,14 +250,11 @@ fetchContactList();
 
 // 计算处理联系人邮箱列表
 const hasSelected = computed(() => selectedContacts.value.length > 0);
-const paginatedContactList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return contactList.value.slice(start, start + pageSize.value);
-});
+
 const isAllSelected = computed(() => {
   return (
-    paginatedContactList.value.length > 0 &&
-    selectedContacts.value.length === paginatedContactList.value.length
+    contactList.value.length > 0 &&
+    selectedContacts.value.length === contactList.value.length
   );
 });
 // 添加/更新联系人弹窗相关
@@ -275,19 +273,15 @@ const dialogErrors = ref({
   email: ''
 });
 // 确认删除对话框实现
-const confirmDeleteVisible = ref(false);
+const dialogDelVisible = ref(false);
+const deleteContactVisible = ref(false);
+const deleteContactsVisible = ref(false);
 const confirmDeleteTitle = ref('提示');
-const confirmDeleteContent = ref({
+const dialogDelContent = ref({
   text: '',
   userId: null
 });
 
-// 弹窗/对话框取消按钮
-const handleCancle = () => {
-  dialogVisible.value = false;
-  confirmDeleteVisible.value = false;
-
-};
 // 添加联系人邮箱操作
 const handleAddContact = () => {
   updateCotactVisible.value = false;
@@ -345,54 +339,85 @@ const confirmUpdateContact = async () => {
       showMessage.error(`更新联系人邮箱失败：${res.msg || '未知错误'}`);
     }
   } catch (error) {
-    // 处理失败响应
     showMessage.error(`更新失败`);
   }
 };
 // 删除联系人邮箱操作
-const handleRemoveContact = (row) => {
-  confirmDeleteVisible.value = true;
-  confirmDeleteContent.value.text = `确定要删除联系人"${row.userName}"吗?`;
-  confirmDeleteContent.value.userId = row.userId;
+const handleDeleteContact = (row) => {
+  dialogDelVisible.value = true;
+  deleteContactVisible.value = true;
+  deleteContactsVisible.value = false;
+  dialogDelContent.value.text = `确定要删除联系人"${row.userName}"吗?`;
+  dialogDelContent.value.userId = row.userId;
 };
 // 确认删除联系人邮箱
-const confirmDelete = async () => {
-  const userId = confirmDeleteContent.value.userId;
+const confirmDeleteContact = async () => {
+  const userId = dialogDelContent.value.userId;
   try {
     const res = await deleteContact(userId);
     if (res.code == 200) {
       showMessage.success('删除联系人邮箱成功！');
       fetchContactList();
-    }else {
+    } else {
       showMessage.error(`删除联系人邮箱失败：${res.msg || '未知错误'}`);
     }
   } catch (error) {
-    // 处理失败响应
     showMessage.error(`删除失败`);
   }
-  confirmDeleteVisible.value = false;
+  dialogDelVisible.value = false;
 };
 
 // 删除选中/批量删除
-const handleDeleteContact = () => {
-  confirmDeleteVisible.value = true;
-  confirmDeleteContent.value.text = `确定要删除选中的${selectedContacts.value.length}个联系人吗?`;
-};
-// 全选
-const handleSelectAll = (e) => {
+const handleSelectAll = (e) => {// 全选
   if (e.target.checked) {
-    selectedContacts.value = [...paginatedContactList.value];
+    selectedContacts.value = [...contactList.value];
+    console.log(selectedContacts.value);
   } else {
     selectedContacts.value = [];
   }
 };
-// 单行选中
-const handleRowCheck = (row, isChecked) => {
+const handleRowCheck = (row, isChecked) => {// 单行选中
   if (isChecked) {
     selectedContacts.value.push(row);
+    console.log(selectedContacts.value);
   } else {
     selectedContacts.value = selectedContacts.value.filter(item => item.id !== row.id);
   }
+};
+
+// 删除选中联系人邮箱操作
+const handleDeleteContacts = () => {
+  dialogDelVisible.value = true;
+  deleteContactVisible.value = false;
+  deleteContactsVisible.value = true;
+  dialogDelContent.value.text = `确定要删除选中的${selectedContacts.value.length}个联系人吗?`;
+};
+const confirmDeleteContacts = async () => {
+  const userIds = ref([]);
+  userIds.value = selectedContacts.value.map(item => item.userId);
+  console.log(userIds.value);
+  try {
+    const res = await deleteContacts(userIds.value);
+    if (res.code == 200) {
+      showMessage.success('删除选中的联系人成功！');
+      fetchContactList();
+    } else {
+      showMessage.error(`删除选中的联系人失败：${res.msg} || '未知错误'`);
+    }
+  } catch (error) {
+
+    showMessage.error(`删除失败`);
+  }
+  dialogDelVisible.value = false;
+};
+
+// 弹窗/对话框取消按钮
+const handleCancle = () => {
+  dialogVisible.value = false;
+  dialogDelVisible.value = false;
+  deleteContactVisible.value = false;
+  deleteContactsVisible.value = false;
+
 };
 
 /**
@@ -407,7 +432,6 @@ const handlePageSizeChange = (e) => {
 // 页号切换
 const handleCurrentChange = (val) => {
   currentPage.value = val;
-  console.log(val, currentPage.value)
   selectedContacts.value = [];
   fetchContactList();
 };

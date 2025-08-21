@@ -394,10 +394,6 @@ onActivated(() => {
 </script>
 
 <style scoped>
-/* 原有样式保持不变 */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* 骨架屏动画 */
 .loading-skeleton {
