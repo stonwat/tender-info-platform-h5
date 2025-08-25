@@ -5,31 +5,31 @@
       @region-change="handleRegionChange" @date-change="handleDateChange" @refresh="handleRefresh"
       @search="handleSearch" />
 
+    <!-- 筛选标签（带清除Icon） -->
+    <FilterTags :selected-region="selectedRegion" :search-query="searchQuery" @clear-region="handleClearRegion"
+      @clear-search="handleClearSearch" @clear-all="handleClearAll" />
     <!-- 主体内容 -->
     <main class="container mx-auto px-4 py-4">
-      <!-- Tab 导航栏（响应式换行+渐变下划线） -->
+      <!-- Tab 导航栏 -->
       <div class="tab-nav flex flex-wrap border-b border-gray-200 mb-4">
         <button class="tab-btn flex-1 sm:flex-auto px-2 sm:px-4 py-2 text-sm font-medium transition-colors" :class="{
-          'text-gray-500 hover:text-primary': currentTab !== 'tender',
-          'text-primary font-semibold': currentTab === 'tender'
-        }" @click="switchTab('tender')">
+          'text-gray-500 hover:text-primary': currentTab !== 'projectPurchase',
+          'text-primary font-semibold': currentTab === 'projectPurchase'
+        }" @click="switchTab('projectPurchase')">
           项目采购
-          <div v-if="currentTab === 'tender'" class="w-full h-1 mt-1 bg-gradient-to-r from-primary to-accent"></div>
+          <div v-if="currentTab === 'projectPurchase'" class="w-full h-1 mt-1 bg-gradient-to-r from-primary to-accent">
+          </div>
         </button>
         <button class="tab-btn flex-1 sm:flex-auto px-2 sm:px-4 py-2 text-sm font-medium transition-colors" :class="{
-          'text-gray-500 hover:text-primary': currentTab !== 'other',
-          'text-primary font-semibold': currentTab === 'other'
-        }" @click="switchTab('other')">
+          'text-gray-500 hover:text-primary': currentTab !== 'serviceMart',
+          'text-primary font-semibold': currentTab === 'serviceMart'
+        }" @click="switchTab('serviceMart')">
           服务工程
-          <div v-if="currentTab === 'other'" class="w-full h-1 mt-1 bg-gradient-to-r from-primary to-accent"></div>
+          <div v-if="currentTab === 'serviceMart'" class="w-full h-1 mt-1 bg-gradient-to-r from-primary to-accent">
+          </div>
         </button>
       </div>
-
-      <!-- 筛选标签（带清除Icon） -->
-      <FilterTags :selected-region="selectedRegion" :search-query="searchQuery" @clear-region="handleClearRegion"
-        @clear-search="handleClearSearch" @clear-all="handleClearAll" />
-
-      <!-- 列表计数（增强对比） -->
+      <!-- 列表计数 -->
       <div class="text-xs text-neutral mb-4 flex justify-between items-center">
         <span>共找到
           <span class="text-primary font-medium">{{ currentTotalCount }}</span> 条信息
@@ -66,7 +66,7 @@
             <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
               <i class="fa fa-search text-3xl text-gray-300"></i>
             </div>
-            <p class="text-neutral">当天暂无匹配的{{ currentTab === 'tender' ? '招标' : '服务工程' }}信息</p>
+            <p class="text-neutral">当天暂无匹配的{{ currentTab === 'projectPurchase' ? '项目采购' : '服务工程' }}信息</p>
             <button @click="handleRefresh"
               class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90">
               重新加载
@@ -114,7 +114,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onActivated, onUnmounted, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import Navbar from '../components/Navbar.vue';
 import TenderItem from '../components/TenderItem.vue';
 import FilterTags from '../components/FilterTags.vue';
@@ -125,12 +125,12 @@ import { formatDate } from '../utils/format';
 
 // 路由和状态管理 
 const router = useRouter();
-const route = useRoute();
 
-const currentTab = ref('tender');
-const tenders = ref([]);
-const otherTenders = ref([]);
-const totalCounts = ref({ tender: 0, other: 0 });
+// 响应式变量集中初始化，精简定义
+const currentTab = ref('projectPurchase');
+const projectPurchaseList = ref([]);
+const serviceMartList = ref([]);
+const totalCounts = ref({ projectPurchase: 0, serviceMart: 0 });
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const isLoading = ref(true);
@@ -140,150 +140,94 @@ const selectedRegion = ref('');
 const selectedDate = ref('');
 const errorMessage = ref('');
 const showBackToTop = ref(false);
-
-// 👇 新增：观察目标和观察者实例
 const observeTarget = ref(null);
 let observer = null;
 
-// 核心刷新逻辑 
-const handleRefresh = () => {
-  loadInitialTenders();
+// 公共参数生成函数：提取重复的参数构造逻辑
+const getParams = () => ({
+  page: currentPage.value - 1,
+  size: itemsPerPage.value,
+  region: selectedRegion.value || '',
+  keyword: searchQuery.value.trim() || '',
+  date: selectedDate.value || ''
+});
+
+// 数据格式化函数：根据标签类型处理数据，减少重复逻辑
+const formatTenders = (items, isProjectPurchase) => {
+  if (isProjectPurchase) {
+    return items.map(item => ({ ...item }));
+  }
+  return items.map(item => ({ ...item, budget: `${item.budget}元`, matter: '——' }));
 };
 
-// 加载初始数据 
-const loadInitialTenders = async () => {
+// 公共数据请求函数：统一处理API调用和数据更新
+const fetchTenders = async (isInitial = false) => {
   isLoading.value = true;
-  currentPage.value = 1;
+  const isProjectPurchase = currentTab.value === 'projectPurchase';
+  const api = isProjectPurchase ? getProjectPurchaseList : getServiceMartList;
+  const listRef = isProjectPurchase ? projectPurchaseList : serviceMartList;
+
   try {
-    const params = {
-      page: currentPage.value - 1,
-      size: itemsPerPage.value,
-      region: selectedRegion.value || '',
-      keyword: searchQuery.value.trim() || '',
-      date: selectedDate.value || ''
-    };
+    const res = await api(getParams());
+    const formatted = formatTenders(res.data.content, isProjectPurchase);
 
-    let data;
-    if (currentTab.value === 'tender') {
-      data = await getProjectPurchaseList(params);
-      const formattedTenders = data.content.map(item => ({
-        ...item, // 保留原有字段（如title、url等）
-      }));
-      tenders.value = formattedTenders; // 赋值处理后的数据
-      // tenders.value = data.content;
-      totalCounts.value.tender = data.totalElements;
-    } else {
-      data = await getServiceMartList(params);
-      const formattedTenders = data.content.map(item => ({
-        ...item, // 保留原有字段（如title、url等）
-        budget: `${item.budget}元`,
-        matter: '——' 
-      }));
-      otherTenders.value = formattedTenders; // 赋值处理后的数据
-      // console.log(otherTenders,'other')
-      // otherTenders.value = data.content;
-      totalCounts.value.other = data.totalElements;
-    }
-
+    // 初始加载覆盖数据，加载更多拼接数据
+    listRef.value = isInitial ? formatted : [...listRef.value, ...formatted];
+    totalCounts.value[currentTab.value] = res.data.totalElements;
     hasMore.value = (currentPage.value * itemsPerPage.value) < currentTotalCount.value;
     errorMessage.value = '';
   } catch (err) {
-    errorMessage.value = `加载${currentTab.value === 'tender' ? '项目采购' : '服务工程'}信息失败，请稍后重试`;
+    const typeText = isProjectPurchase ? '项目采购' : '服务工程';
+    errorMessage.value = `加载${isInitial ? '' : '更多'}${typeText}信息失败，请稍后重试`;
+    if (!isInitial) currentPage.value--; // 加载更多失败回退页码
     console.error(err);
   } finally {
     isLoading.value = false;
   }
 };
 
-// 加载更多数据 
-const loadIMoreTenders = async () => {
+// 核心刷新逻辑（初始加载）
+const handleRefresh = () => {
+  currentPage.value = 1;
+  fetchTenders(true);
+};
+
+// 加载更多数据
+const loadMoreTenders = async () => {
   if (isLoading.value || !hasMore.value) return;
-  isLoading.value = true;
   currentPage.value++;
-
-  try {
-    const params = {
-      page: currentPage.value - 1,
-      size: itemsPerPage.value,
-      region: selectedRegion.value || '',
-      keyword: searchQuery.value.trim() || '',
-      date: selectedDate.value || ''
-    };
-
-    let data;
-    if (currentTab.value === 'tender') {
-      data = await getProjectPurchaseList(params);
-      const formattedTenders = data.content.map(item => ({
-        ...item, // 保留原有字段（如title、url等）
-      }));
-      tenders.value = [...tenders.value, ...formattedTenders];
-      totalCounts.value.tender = data.totalElements;
-    } else {
-      data = await getServiceMartList(params);
-      const formattedTenders = data.content.map(item => ({
-        ...item, // 保留原有字段（如title、url等）
-        budget: `${item.budget}元`,
-        matter: '——' 
-      }));
-      otherTenders.value = [...otherTenders.value, ...formattedTenders];
-      totalCounts.value.other = data.totalElements;
-    }
-
-    hasMore.value = (currentPage.value * itemsPerPage.value) < currentTotalCount.value;
-  } catch (err) {
-    errorMessage.value = `加载更多${currentTab.value === 'tender' ? '项目采购' : '服务工程'}信息失败，请稍后重试`;
-    currentPage.value--;
-    console.error(err);
-  } finally {
-    isLoading.value = false;
-  }
+  fetchTenders(false);
 };
 
-// 👇 新增：初始化 Intersection Observer
+// 初始化 Intersection Observer
 const initObserver = () => {
-  // 断开旧观察者（避免重复监听）
-  if (observer) {
-    observer.disconnect();
-  }
-  // 绑定新观察者
+  observer?.disconnect(); // 可选链简化旧观察者断开
   if (observeTarget.value) {
-    observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // 当占位符进入视口、有更多数据、且未在加载中时，触发加载
-          if (entry.isIntersecting && hasMore.value && !isLoading.value) {
-            loadIMoreTenders();
-          }
-        });
-      },
-      {
-        threshold: 0.1, // 占位符 10% 进入视口即触发
-      }
-    );
+    observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && hasMore.value && !isLoading.value) {
+          loadMoreTenders();
+        }
+      });
+    }, { threshold: 0.1 });
     observer.observe(observeTarget.value);
   }
 };
 
-// 计算属性 
-const currentTenders = computed(() => {
-  return currentTab.value === 'tender' ? tenders.value : otherTenders.value;
-});
-const currentTotalCount = computed(() => {
-  return totalCounts.value[currentTab.value] || 0;
-});
+// 计算属性
+const currentTenders = computed(() =>
+  currentTab.value === 'projectPurchase' ? projectPurchaseList.value : serviceMartList.value
+);
+const currentTotalCount = computed(() => totalCounts.value[currentTab.value] || 0);
+const startIndex = computed(() => 1);
+const endIndex = computed(() => Math.min(currentPage.value * itemsPerPage.value, currentTotalCount.value));
 
+// 序号计算
 const getSerialNumber = (index) => {
-  return index + 1;//( currentPage.value - 1) * itemsPerPage.value + index + 1
+  return index + 1; 
 };
 
-const startIndex = computed(() => {
-  return 1;
-});
-const endIndex = computed(() => {
-  return Math.min(currentPage.value * itemsPerPage.value, currentTotalCount.value);
-});
-
-// 交互函数 
+// 交互函数
 const switchTab = (tab) => {
   if (currentTab.value === tab) return;
   currentTab.value = tab;
@@ -291,110 +235,65 @@ const switchTab = (tab) => {
   handleRefresh();
 };
 
-const handleSearch = (query) => {
-  searchQuery.value = query;
-  handleRefresh();
-};
+// 筛选相关函数：统一调用handleRefresh，减少重复
+const handleSearch = (query) => { searchQuery.value = query; handleRefresh(); };
+const handleDateChange = (date) => { selectedDate.value = date; handleRefresh(); };
+const handleRegionChange = (region) => { selectedRegion.value = region; handleRefresh(); };
+const handleClearSearch = () => { searchQuery.value = ''; handleRefresh(); };
+const handleClearRegion = () => { selectedRegion.value = ''; handleRefresh(); };
+const handleClearAll = () => { selectedRegion.value = ''; searchQuery.value = ''; handleRefresh(); };
 
-const handleDateChange = (date) => {
-  selectedDate.value = date;
-  handleRefresh();
-};
-
-const handleRegionChange = (region) => {
-  selectedRegion.value = region;
-  handleRefresh();
-};
-
-const handleClearSearch = () => {
-  searchQuery.value = '';
-  handleRefresh();
-};
-
-const handleClearRegion = () => {
-  selectedRegion.value = '';
-  handleRefresh();
-};
-
-const handleClearAll = () => {
-  selectedRegion.value = '';
-  searchQuery.value = '';
-  handleRefresh();
-};
-
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
+// 滚动相关函数
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 const handleScroll = () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  showBackToTop.value = scrollTop > 300;
+  showBackToTop.value = (window.pageYOffset || document.documentElement.scrollTop) > 300;
 };
 
-// 监听筛选条件和 currentTab 变化，更新路由参数
+// 监听筛选条件和路由同步
 watch(
   [() => selectedRegion.value, () => selectedDate.value, () => searchQuery.value, () => currentTab.value],
   ([newRegion, newDate, newKeyword, newTab]) => {
     router.replace({
       name: 'TenderList',
-      query: {
-        region: newRegion || '',
-        date: newDate || '',
-        keyword: newKeyword || '',
-        tab: newTab || '' // 新增：将 currentTab 存入路由参数（用 tab 作为键）
-      }
+      query: { region: newRegion, date: newDate, keyword: newKeyword, tab: newTab }
     });
   },
   { immediate: true }
 );
 
-// 👇 监听数据变化，重新初始化观察者
-watch(currentTenders, () => {
-  nextTick(() => { // 确保 DOM 渲染完成后再初始化
-    initObserver();
-  });
-});
+// 监听数据变化重新初始化观察者
+watch(currentTenders, () => nextTick(initObserver));
 
-// 生命周期（新增观察者管理）
+// 生命周期函数
 onMounted(() => {
-  // 原有逻辑：恢复 URL 参数、加载数据
   const urlParams = new URLSearchParams(window.location.search);
+  // 从URL恢复参数
   selectedRegion.value = urlParams.get('region') || '';
   selectedDate.value = urlParams.get('date') || '';
   searchQuery.value = urlParams.get('keyword') || '';
   const tabFromUrl = urlParams.get('tab');
-  if (tabFromUrl && ['tender', 'other'].includes(tabFromUrl)) {
+  if (tabFromUrl && ['projectPurchase', 'serviceMart'].includes(tabFromUrl)) {
     currentTab.value = tabFromUrl;
   }
-  if (!selectedDate.value) {
-    selectedDate.value = formatDate(new Date());
-  }
+  if (!selectedDate.value) selectedDate.value = formatDate(new Date());
+
   handleRefresh();
   window.addEventListener('scroll', handleScroll);
-
-  // 初始化观察者 
-  initObserver();
+  nextTick(initObserver); // 确保DOM渲染后初始化观察者
 });
 
 onUnmounted(() => {
-  // 销毁观察者，避免内存泄漏
-  if (observer) {
-    observer.disconnect();
-  }
+  observer?.disconnect(); // 清理观察者
   window.removeEventListener('scroll', handleScroll);
 });
 
 onActivated(() => {
   handleRefresh();
-  // 切换回页面时，重新初始化观察者
-  nextTick(() => {
-    initObserver();
-  });
+  nextTick(initObserver); // 激活时重新初始化观察者
 });
 </script>
 
 <style scoped>
-
 /* 骨架屏动画 */
 .loading-skeleton {
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);

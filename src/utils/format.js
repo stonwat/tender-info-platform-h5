@@ -40,5 +40,5 @@ export function formatRegion(region) {
  * @returns {string}
  */
 export function formatCounty(county) {
-  return county && county !== 'one' ? county : '';
+  return county && county !== 'None' ? county : '';
 }
